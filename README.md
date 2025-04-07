@@ -1,0 +1,7 @@
+# Readme
+
+[English](README.md) | [简体中文](README_cn.md)
+
+unofficial `rust` implementation of `libjaka`!
+
+This library is part of the [Universal Robot Driver Project](https://github.com/Robot-Exp-Platform/libjaka-rs)! We are committed to providing Rust driver support for more robotic platforms! **Unifying driver interfaces across different robot models, reducing the learning curve for robotics, and delivering more efficient robot control solutions!**
