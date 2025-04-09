@@ -1,6 +1,7 @@
 use std::{marker::ConstParamTy, net::SocketAddrV4};
 
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 #[derive(ConstParamTy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Command {
@@ -239,8 +240,8 @@ type ResumeProgramResponse = Response<{ Command::ResumeProgram }, ResumeProgramS
 type ResumeProgramState = DefaultState;
 
 // stop program
-type StopRequest = Request<{ Command::Stop }, ()>;
-type StopResponse = Response<{ Command::Stop }, StopState>;
+type StopRequest = Request<{ Command::StopProgram }, ()>;
+type StopResponse = Response<{ Command::StopProgram }, StopState>;
 type StopState = DefaultState;
 
 // get program state
@@ -321,7 +322,6 @@ struct SetUserIdData {
 // get extio status
 type GetExtioStatusRequest = Request<{ Command::GetExtioStatus }, ()>;
 type GetExtioStatusResponse = Response<{ Command::GetExtioStatus }, GetExtioStatusState>;
-type GetExtioStatusState = DefaultState;
 struct GetExtioStatusState {
     error_code: String,
     error_msg: String,
@@ -329,26 +329,25 @@ struct GetExtioStatusState {
 }
 struct ExtioStatus {
     version: u8,
-    setups: Vec<ExtioSetup>,
-    current_state: ExtioCurrentState,
+    setups: Vec<Value>,
 }
-struct ExtioSetup {
-    setup_id: u8,
-    mobus_io_name: String,
-    address: SocketAddrV4,
-    channel_counts: ChannelCounts,
-    pinmap: HashMap<String, u8>,
-}
-struct ChannelCounts {
-    ai: (u8, u8),
-    do_: (u8, u8),
-    ao: (u8, u8),
-    di: (u8, u8),
-}
-struct ExtioCurrentState {
-    state: u8,
-    di: (u8, u8, u8, u8, u8, u8, u8, u8),
-}
+// struct ExtioSetup {
+//     setup_id: u8,
+//     mobus_io_name: String,
+//     address: SocketAddrV4,
+//     channel_counts: ChannelCounts,
+//     pinmap: HashMap<String, u8>,
+// }
+// struct ChannelCounts {
+//     ai: (u8, u8),
+//     do_: (u8, u8),
+//     ao: (u8, u8),
+//     di: (u8, u8),
+// }
+// struct ExtioCurrentState {
+//     state: u8,
+//     di: (u8, u8, u8, u8, u8, u8, u8, u8),
+// }
 
 // get funcdi status
 type GetFuncdiStatusRequest = Request<{ Command::GetFuncdiStatus }, ()>;
