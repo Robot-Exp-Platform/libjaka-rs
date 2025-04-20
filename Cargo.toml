@@ -23,4 +23,5 @@ robot_behavior = "0.3.2"
 [features]
 default = []
 debug = []
-to_py = ["pyo3"]
+ffi = []
+to_py = ["pyo3", "ffi"]
