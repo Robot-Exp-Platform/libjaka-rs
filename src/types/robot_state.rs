@@ -21,7 +21,7 @@ macro_rules! impl_state_serde {
     };
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct RobotState {
     pub joint_actual_position: [f64; 9],
     pub actual_position: [f64; 9],
@@ -46,7 +46,7 @@ pub struct RobotState {
     pub drag_near_limit: [[bool; 6]; 1],
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BigArray<T, const N: usize>([T; N]);
 
 impl<T, const N: usize> Default for BigArray<T, N>
@@ -58,7 +58,7 @@ where
     }
 }
 
-#[derive(Debug, Default, Serialize_repr, Deserialize_repr)]
+#[derive(Debug, Default, Serialize_repr, Deserialize_repr, Clone)]
 #[repr(u8)]
 pub enum TaskState {
     #[default]
@@ -69,7 +69,7 @@ pub enum TaskState {
 }
 impl_state_serde!(enum TaskState);
 
-#[derive(Debug, Default, Serialize_repr, Deserialize_repr)]
+#[derive(Debug, Default, Serialize_repr, Deserialize_repr, Clone)]
 #[repr(u8)]
 pub enum TaskMode {
     #[default]
@@ -79,11 +79,11 @@ pub enum TaskMode {
 }
 impl_state_serde!(enum TaskMode);
 
-#[derive(Debug, Default, Serialize_repr, Deserialize_repr)]
+#[derive(Debug, Default, Serialize_repr, Deserialize_repr, Clone)]
 #[repr(u8)]
 pub enum InterpState {
     #[default]
-    IDLE = 0,
+    Idle = 0,
     Loading = 1,
     Pause = 2,
     Running = 3,
@@ -92,7 +92,7 @@ impl_state_serde!(enum InterpState);
 
 impl StateSerde for f64 {
     fn state_from_str(s: &str) -> Self {
-        if s.chars().last().unwrap() == ',' {
+        if s.ends_with(',') {
             return s[1..s.len() - 1].parse().unwrap();
         }
         s.parse().unwrap()
@@ -134,7 +134,7 @@ where
             .map(|x| T::state_from_str(x))
             .collect::<Vec<T>>()
             .try_into()
-            .expect(format!("Failed to convert to array: [{}; {}]", type_name::<T>(), N).as_str())
+            .unwrap_or_else(|_| panic!("Failed to convert to array: [{}; {}]", type_name::<T>(), N))
     }
 
     fn state_to_string(&self) -> String {
@@ -164,8 +164,8 @@ where
 impl StateSerde for RobotState {
     fn state_from_str(s: &str) -> Self {
         let mut state = RobotState::default();
-        let mut parts = s.split('\n');
-        while let Some(part) = parts.next() {
+        let parts = s.split('\n');
+        for part in parts {
             let (key, value) = part.split_once(':').unwrap();
             match key {
                 "joint_actual_position" => {

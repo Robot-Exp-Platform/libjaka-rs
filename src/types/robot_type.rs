@@ -1,9 +1,15 @@
-use std::{marker::ConstParamTy, net::SocketAddrV4};
+use std::marker::ConstParamTy;
 
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use serde_json::Value;
+use serde_with::serde_as;
 
-#[derive(ConstParamTy, PartialEq, Eq, Serialize, Deserialize)]
+pub trait CommandSerde: Sized {
+    fn serialize(&self) -> String;
+    fn deserialize(data: &str) -> Option<Self>;
+}
+
+#[derive(ConstParamTy, PartialEq, Eq, Serialize, Deserialize, Debug)]
 pub enum Command {
     PowerOn,
     PowerOff,
@@ -54,282 +60,307 @@ pub enum Command {
     GetJointPos,
     GetTcpPos,
 }
-
-struct Request<const C: Command, D> {
-    data: D,
+pub struct Request<const C: Command, D> {
+    pub data: D,
 }
 
-struct Response<const C: Command, S> {
-    state: S,
+pub struct Response<const C: Command, S> {
+    pub state: S,
 }
 
-enum ErrorCode {
+pub enum ErrorCode {
     Success,
     Exception,
     Error,
 }
 
-struct DefaultState {
-    error_code: String,
-    error_msg: String,
+#[derive(Serialize, Deserialize)]
+pub struct DefaultState {
+    pub error_code: String,
+    pub error_msg: String,
 }
 
 // power on
-type PowerOnRequest = Request<{ Command::PowerOn }, ()>;
-type PowerOnResponse = Response<{ Command::PowerOn }, PowerOnState>;
-type PowerOnState = DefaultState;
+pub type PowerOnRequest = Request<{ Command::PowerOn }, ()>;
+pub type PowerOnResponse = Response<{ Command::PowerOn }, PowerOnState>;
+pub type PowerOnState = DefaultState;
 
 // power off
-type PowerOffRequest = Request<{ Command::PowerOff }, ()>;
-type PowerOffResponse = Response<{ Command::PowerOff }, PowerOffState>;
-type PowerOffState = DefaultState;
+pub type PowerOffRequest = Request<{ Command::PowerOff }, ()>;
+pub type PowerOffResponse = Response<{ Command::PowerOff }, PowerOffState>;
+pub type PowerOffState = DefaultState;
 
 // enable robot
-type EnableRobotRequest = Request<{ Command::EnableRobot }, ()>;
-type EnableRobotResponse = Response<{ Command::EnableRobot }, EnableRobotState>;
-type EnableRobotState = DefaultState;
+pub type EnableRobotRequest = Request<{ Command::EnableRobot }, ()>;
+pub type EnableRobotResponse = Response<{ Command::EnableRobot }, EnableRobotState>;
+pub type EnableRobotState = DefaultState;
 
 // joint move
-type JointMoveRequest = Request<{ Command::JointMove }, JointMoveData>;
-type JointMoveResponse = Response<{ Command::JointMove }, JointMoveState>;
-type JointMoveState = DefaultState;
-struct JointMoveData {
-    joint_angles: [f64; 6],
-    speed: f64,
-    accel: f64,
-    relflag: u8,
+pub type JointMoveRequest = Request<{ Command::JointMove }, JointMoveData>;
+pub type JointMoveResponse = Response<{ Command::JointMove }, JointMoveState>;
+pub type JointMoveState = DefaultState;
+#[derive(Serialize, Deserialize)]
+pub struct JointMoveData {
+    pub joint_angles: [f64; 6],
+    pub speed: f64,
+    pub accel: f64,
+    pub relflag: u8,
 }
 
 // end move
-type EndMoveRequest = Request<{ Command::EndMove }, EndMoveData>;
-type EndMoveResponse = Response<{ Command::EndMove }, EndMoveState>;
-type EndMoveState = DefaultState;
-struct EndMoveData {
-    end_position: [f64; 6],
-    speed: f64,
-    accel: f64,
+pub type EndMoveRequest = Request<{ Command::EndMove }, EndMoveData>;
+pub type EndMoveResponse = Response<{ Command::EndMove }, EndMoveState>;
+pub type EndMoveState = DefaultState;
+#[derive(Serialize, Deserialize)]
+pub struct EndMoveData {
+    pub end_position: [f64; 6],
+    pub speed: f64,
+    pub accel: f64,
 }
 
 // shutdown
-type ShutdownRequest = Request<{ Command::Shutdown }, ()>;
-type ShutdownResponse = Response<{ Command::Shutdown }, ShutdownState>;
-type ShutdownState = DefaultState;
+pub type ShutdownRequest = Request<{ Command::Shutdown }, ()>;
+pub type ShutdownResponse = Response<{ Command::Shutdown }, ShutdownState>;
+pub type ShutdownState = DefaultState;
 
 // quit
-type QuitRequest = Request<{ Command::Quit }, ()>;
-type QuitResponse = Response<{ Command::Quit }, QuitState>;
-type QuitState = DefaultState;
+pub type QuitRequest = Request<{ Command::Quit }, ()>;
+pub type QuitResponse = Response<{ Command::Quit }, QuitState>;
+pub type QuitState = DefaultState;
 
 // get robot state
-type GetRobotStateRequest = Request<{ Command::GetRobotState }, ()>;
-type GetRobotStateResponse = Response<{ Command::GetRobotState }, GetRobotStateState>;
-struct GetRobotStateState {
-    error_code: String,
-    error_msg: String,
-    enable: String,
-    power: String,
+pub type GetRobotStateRequest = Request<{ Command::GetRobotState }, ()>;
+pub type GetRobotStateResponse = Response<{ Command::GetRobotState }, GetRobotStateState>;
+#[derive(Serialize, Deserialize)]
+pub struct GetRobotStateState {
+    pub error_code: String,
+    pub error_msg: String,
+    pub enable: String,
+    pub power: String,
 }
 
 // disable robot
-type DisableRobotRequest = Request<{ Command::DisableRobot }, ()>;
-type DisableRobotResponse = Response<{ Command::DisableRobot }, DisableRobotState>;
-type DisableRobotState = DefaultState;
+pub type DisableRobotRequest = Request<{ Command::DisableRobot }, ()>;
+pub type DisableRobotResponse = Response<{ Command::DisableRobot }, DisableRobotState>;
+pub type DisableRobotState = DefaultState;
 
 // torque control enable
-type TorqueControlEnableRequest =
+pub type TorqueControlEnableRequest =
     Request<{ Command::TorqueControlEnable }, TorqueControlEnableData>;
-type TorqueControlEnableResponse =
+pub type TorqueControlEnableResponse =
     Response<{ Command::TorqueControlEnable }, TorqueControlEnableState>;
-type TorqueControlEnableState = DefaultState;
-struct TorqueControlEnableData {
-    enable_flag: u8,
+pub type TorqueControlEnableState = DefaultState;
+#[derive(Serialize, Deserialize)]
+pub struct TorqueControlEnableData {
+    pub enable_flag: u8,
 }
 
 // torque feedforward
-type TorqueFeedforwardRequest = Request<{ Command::TorqueFeedforward }, TorqueFeedforwardData>;
-type TorqueFeedforwardResponse = Response<{ Command::TorqueFeedforward }, TorqueFeedforwardState>;
-type TorqueFeedforwardState = DefaultState;
-struct TorqueFeedforwardData {
-    grv_current: [f64; 6],
-    includegrvflag: u8,
+pub type TorqueFeedforwardRequest = Request<{ Command::TorqueFeedforward }, TorqueFeedforwardData>;
+pub type TorqueFeedforwardResponse =
+    Response<{ Command::TorqueFeedforward }, TorqueFeedforwardState>;
+pub type TorqueFeedforwardState = DefaultState;
+#[derive(Serialize, Deserialize)]
+pub struct TorqueFeedforwardData {
+    pub grv_current: [f64; 6],
+    pub includegrvflag: u8,
 }
 
 // servo move
-type ServoMoveRequest = Request<{ Command::ServoMove }, ServoMoveData>;
-type ServoMoveResponse = Response<{ Command::ServoMove }, ServoMoveState>;
-type ServoMoveState = DefaultState;
-struct ServoMoveData {
-    relflag: u8,
+pub type ServoMoveRequest = Request<{ Command::ServoMove }, ServoMoveData>;
+pub type ServoMoveResponse = Response<{ Command::ServoMove }, ServoMoveState>;
+pub type ServoMoveState = DefaultState;
+#[derive(Serialize, Deserialize)]
+pub struct ServoMoveData {
+    pub relflag: u8,
 }
 
 // servo j
-type ServoJRequest = Request<{ Command::ServoJ }, ServoJData>;
-type ServoJResponse = Response<{ Command::ServoJ }, ServoJState>;
-type ServoJState = DefaultState;
-struct ServoJData {
-    joint_angles: [f64; 6],
-    relflag: u8,
+pub type ServoJRequest = Request<{ Command::ServoJ }, ServoJData>;
+pub type ServoJResponse = Response<{ Command::ServoJ }, ServoJState>;
+pub type ServoJState = DefaultState;
+#[derive(Serialize, Deserialize)]
+pub struct ServoJData {
+    pub joint_angles: [f64; 6],
+    pub relflag: u8,
 }
 
 // servo p
-type ServoPRequest = Request<{ Command::ServoP }, ServoPData>;
-type ServoPResponse = Response<{ Command::ServoP }, ServoPState>;
-type ServoPState = DefaultState;
-struct ServoPData {
-    cart_position: [f64; 6], // 文档中变量名有拼写错误
-    relflag: u8,
+pub type ServoPRequest = Request<{ Command::ServoP }, ServoPData>;
+pub type ServoPResponse = Response<{ Command::ServoP }, ServoPState>;
+pub type ServoPState = DefaultState;
+#[derive(Serialize, Deserialize)]
+pub struct ServoPData {
+    pub cart_position: [f64; 6], // 文档中变量名有拼写错误
+    pub relflag: u8,
 }
 
 // get data
-type GetDataRequest = Request<{ Command::GetData }, ()>;
-type GetDataResponse = Response<{ Command::GetData }, GetDataState>;
-struct GetDataState {
-    error_code: String,
-    error_msg: String,
-    tio_dout: [u8; 8],
-    tool_position: [f64; 9],
-    tio_ain: [u8; 2],
-    paused: u8,
-    cmd_name: String,
-    estop: u8,
-    current_tool_id: u8,
-    actual_position: [f64; 9],
-    joint_actual_position: [f64; 9],
-    rapidrate: f64,
-    enabled: u8,
+pub type GetDataRequest = Request<{ Command::GetData }, ()>;
+pub type GetDataResponse = Response<{ Command::GetData }, GetDataState>;
+#[derive(Serialize, Deserialize)]
+pub struct GetDataState {
+    pub error_code: String,
+    pub error_msg: String,
+    pub tio_dout: [u8; 8],
+    pub tool_position: [f64; 9],
+    pub tio_ain: [u8; 2],
+    pub paused: u8,
+    pub cmd_name: String,
+    pub estop: u8,
+    pub current_tool_id: u8,
+    pub actual_position: [f64; 9],
+    pub joint_actual_position: [f64; 9],
+    pub rapidrate: f64,
+    pub enabled: u8,
 }
 
 // rapid rate
-type RapidRateRequest = Request<{ Command::RapidRate }, RapidRateData>;
-type RapidRateResponse = Response<{ Command::RapidRate }, RapidRateState>;
-type RapidRateState = DefaultState;
-struct RapidRateData {
-    rate_value: f64,
+pub type RapidRateRequest = Request<{ Command::RapidRate }, RapidRateData>;
+pub type RapidRateResponse = Response<{ Command::RapidRate }, RapidRateState>;
+pub type RapidRateState = DefaultState;
+#[derive(Serialize, Deserialize)]
+pub struct RapidRateData {
+    pub rate_value: f64,
 }
 
 // load program
-type LoadProgramRequest = Request<{ Command::LoadProgram }, LoadProgramData>;
-type LoadProgramResponse = Response<{ Command::LoadProgram }, LoadProgramState>;
-type LoadProgramState = DefaultState;
-struct LoadProgramData {
-    program_name: String,
+pub type LoadProgramRequest = Request<{ Command::LoadProgram }, LoadProgramData>;
+pub type LoadProgramResponse = Response<{ Command::LoadProgram }, LoadProgramState>;
+pub type LoadProgramState = DefaultState;
+#[derive(Serialize, Deserialize)]
+pub struct LoadProgramData {
+    pub program_name: String,
 }
 
 // get loaded program
-type GetLoadedProgramRequest = Request<{ Command::GetLoadedProgram }, ()>;
-type GetLoadedProgramResponse = Response<{ Command::GetLoadedProgram }, GetLoadedProgramState>;
-struct GetLoadedProgramState {
-    error_code: String,
-    error_msg: String,
-    program_name: String,
+pub type GetLoadedProgramRequest = Request<{ Command::GetLoadedProgram }, ()>;
+pub type GetLoadedProgramResponse = Response<{ Command::GetLoadedProgram }, GetLoadedProgramState>;
+#[derive(Serialize, Deserialize)]
+pub struct GetLoadedProgramState {
+    pub error_code: String,
+    pub error_msg: String,
+    pub program_name: String,
 }
 
 // play program
-type PlayProgramRequest = Request<{ Command::PlayProgram }, ()>;
-type PlayProgramResponse = Response<{ Command::PlayProgram }, PlayProgramState>;
-type PlayProgramState = DefaultState;
+pub type PlayProgramRequest = Request<{ Command::PlayProgram }, ()>;
+pub type PlayProgramResponse = Response<{ Command::PlayProgram }, PlayProgramState>;
+pub type PlayProgramState = DefaultState;
 
 // pause program
-type PauseProgramRequest = Request<{ Command::PauseProgram }, ()>;
-type PauseProgramResponse = Response<{ Command::PauseProgram }, PauseProgramState>;
-type PauseProgramState = DefaultState;
+pub type PauseProgramRequest = Request<{ Command::PauseProgram }, ()>;
+pub type PauseProgramResponse = Response<{ Command::PauseProgram }, PauseProgramState>;
+pub type PauseProgramState = DefaultState;
 
 // resume program
-type ResumeProgramRequest = Request<{ Command::ResumeProgram }, ()>;
-type ResumeProgramResponse = Response<{ Command::ResumeProgram }, ResumeProgramState>;
-type ResumeProgramState = DefaultState;
+pub type ResumeProgramRequest = Request<{ Command::ResumeProgram }, ()>;
+pub type ResumeProgramResponse = Response<{ Command::ResumeProgram }, ResumeProgramState>;
+pub type ResumeProgramState = DefaultState;
 
 // stop program
-type StopRequest = Request<{ Command::StopProgram }, ()>;
-type StopResponse = Response<{ Command::StopProgram }, StopState>;
-type StopState = DefaultState;
+pub type StopProgramRequest = Request<{ Command::StopProgram }, ()>;
+pub type StopProgramResponse = Response<{ Command::StopProgram }, StopProgramState>;
+pub type StopProgramState = DefaultState;
 
 // get program state
-type GetProgramStateRequest = Request<{ Command::GetProgramState }, ()>;
-type GetProgramStateResponse = Response<{ Command::GetProgramState }, GetProgramStateState>;
-struct GetProgramStateState {
-    error_code: String,
-    error_msg: String,
-    program_state: String,
+pub type GetProgramStateRequest = Request<{ Command::GetProgramState }, ()>;
+pub type GetProgramStateResponse = Response<{ Command::GetProgramState }, GetProgramStateState>;
+#[derive(Serialize, Deserialize)]
+pub struct GetProgramStateState {
+    pub error_code: String,
+    pub error_msg: String,
+    pub program_state: String,
 }
 
 // set digital output
-type SetDigitalOutputRequest = Request<{ Command::SetDigitalOutput }, SetDigitalOutputData>;
-type SetDigitalOutputResponse = Response<{ Command::SetDigitalOutput }, SetDigitalOutputState>;
-type SetDigitalOutputState = DefaultState;
-struct SetDigitalOutputData {
-    type_number: u8,
-    index: u8,
-    value: u8,
+pub type SetDigitalOutputRequest = Request<{ Command::SetDigitalOutput }, SetDigitalOutputData>;
+pub type SetDigitalOutputResponse = Response<{ Command::SetDigitalOutput }, SetDigitalOutputState>;
+pub type SetDigitalOutputState = DefaultState;
+#[derive(Serialize, Deserialize)]
+pub struct SetDigitalOutputData {
+    pub type_number: u8,
+    pub index: u8,
+    pub value: u8,
 }
 
 // get digital input status
-type GetDigitalInputStatusRequest = Request<{ Command::GetDigitalInputStatus }, ()>;
-type GetDigitalInputStatusResponse =
+pub type GetDigitalInputStatusRequest = Request<{ Command::GetDigitalInputStatus }, ()>;
+pub type GetDigitalInputStatusResponse =
     Response<{ Command::GetDigitalInputStatus }, GetDigitalInputStatusState>;
-struct GetDigitalInputStatusState {
-    error_code: String,
-    error_msg: String,
-    din_status: [u8; 64],
+#[serde_as]
+#[derive(Serialize, Deserialize)]
+pub struct GetDigitalInputStatusState {
+    pub error_code: String,
+    pub error_msg: String,
+    #[serde_as(as = "[_; 64]")]
+    pub din_status: [u8; 64],
 }
 
 // set analog output
-type SetAnalogOutputRequest = Request<{ Command::SetAnalogOutput }, SetAnalogOutputData>;
-type SetAnalogOutputResponse = Response<{ Command::SetAnalogOutput }, SetAnalogOutputState>;
-type SetAnalogOutputState = DefaultState;
-struct SetAnalogOutputData {
-    type_number: u8,
-    index: u8,
-    value: f64,
+pub type SetAnalogOutputRequest = Request<{ Command::SetAnalogOutput }, SetAnalogOutputData>;
+pub type SetAnalogOutputResponse = Response<{ Command::SetAnalogOutput }, SetAnalogOutputState>;
+pub type SetAnalogOutputState = DefaultState;
+#[derive(Serialize, Deserialize)]
+pub struct SetAnalogOutputData {
+    pub type_number: u8,
+    pub index: u8,
+    pub value: f64,
 }
 
 // set tool offsets
-type SetToolOffsetsRequest = Request<{ Command::SetToolOffsets }, SetToolOffsetsData>;
-type SetToolOffsetsResponse = Response<{ Command::SetToolOffsets }, SetToolOffsetsState>;
-type SetToolOffsetsState = DefaultState;
-struct SetToolOffsetsData {
-    tooloffset: [f64; 6],
-    id: u8,
-    name: String,
+pub type SetToolOffsetsRequest = Request<{ Command::SetToolOffsets }, SetToolOffsetsData>;
+pub type SetToolOffsetsResponse = Response<{ Command::SetToolOffsets }, SetToolOffsetsState>;
+pub type SetToolOffsetsState = DefaultState;
+#[derive(Serialize, Deserialize)]
+pub struct SetToolOffsetsData {
+    pub tooloffset: [f64; 6],
+    pub id: u8,
+    pub name: String,
 }
 
 // set tool id
-type SetToolIdRequest = Request<{ Command::SetToolId }, SetToolIdData>;
-type SetToolIdResponse = Response<{ Command::SetToolId }, SetToolIdState>;
-type SetToolIdState = DefaultState;
-struct SetToolIdData {
-    tool_id: u8,
+pub type SetToolIdRequest = Request<{ Command::SetToolId }, SetToolIdData>;
+pub type SetToolIdResponse = Response<{ Command::SetToolId }, SetToolIdState>;
+pub type SetToolIdState = DefaultState;
+#[derive(Serialize, Deserialize)]
+pub struct SetToolIdData {
+    pub tool_id: u8,
 }
 
-// set user offsets
-type SetUserOffsetsRequest = Request<{ Command::SetUserOffsets }, SetUserOffsetsData>;
-type SetUserOffsetsResponse = Response<{ Command::SetUserOffsets }, SetUserOffsetsState>;
-type SetUserOffsetsState = DefaultState;
-struct SetUserOffsetsData {
-    useroffset: [f64; 6], //文档中的变量名有拼写错误
-    id: u8,
-    name: String,
+// pub set user offsets
+pub type SetUserOffsetsRequest = Request<{ Command::SetUserOffsets }, SetUserOffsetsData>;
+pub type SetUserOffsetsResponse = Response<{ Command::SetUserOffsets }, SetUserOffsetsState>;
+pub type SetUserOffsetsState = DefaultState;
+#[derive(Serialize, Deserialize)]
+pub struct SetUserOffsetsData {
+    pub useroffset: [f64; 6], //文档中的变量名有拼写错误
+    pub id: u8,
+    pub name: String,
 }
 
 // set user id
-type SetUserIdRequest = Request<{ Command::SetUserId }, SetUserIdData>;
-type SetUserIdResponse = Response<{ Command::SetUserId }, SetUserIdState>;
-type SetUserIdState = DefaultState;
-struct SetUserIdData {
-    user_frame_id: u8, //文档中的变量名说明有错误
+pub type SetUserIdRequest = Request<{ Command::SetUserId }, SetUserIdData>;
+pub type SetUserIdResponse = Response<{ Command::SetUserId }, SetUserIdState>;
+pub type SetUserIdState = DefaultState;
+#[derive(Serialize, Deserialize)]
+pub struct SetUserIdData {
+    pub user_frame_id: u8, //文档中的变量名说明有错误
 }
 
 // get extio status
-type GetExtioStatusRequest = Request<{ Command::GetExtioStatus }, ()>;
-type GetExtioStatusResponse = Response<{ Command::GetExtioStatus }, GetExtioStatusState>;
-struct GetExtioStatusState {
-    error_code: String,
-    error_msg: String,
-    extio_status: ExtioStatus,
+pub type GetExtioStatusRequest = Request<{ Command::GetExtioStatus }, ()>;
+pub type GetExtioStatusResponse = Response<{ Command::GetExtioStatus }, GetExtioStatusState>;
+#[derive(Serialize, Deserialize)]
+pub struct GetExtioStatusState {
+    pub error_code: String,
+    pub error_msg: String,
+    pub extio_status: ExtioStatus,
 }
-struct ExtioStatus {
-    version: u8,
-    setups: Vec<Value>,
+#[derive(Serialize, Deserialize)]
+pub struct ExtioStatus {
+    pub version: u8,
+    pub setups: Vec<Value>,
 }
 // struct ExtioSetup {
 //     setup_id: u8,
@@ -350,65 +381,72 @@ struct ExtioStatus {
 // }
 
 // get funcdi status
-type GetFuncdiStatusRequest = Request<{ Command::GetFuncdiStatus }, ()>;
-type GetFuncdiStatusResponse = Response<{ Command::GetFuncdiStatus }, GetFuncdiStatusState>;
-struct GetFuncdiStatusState {
-    error_code: String,
-    error_msg: String,
-    funcdi_status: [[i8; 2]; 12],
+pub type GetFuncdiStatusRequest = Request<{ Command::GetFuncdiStatus }, ()>;
+pub type GetFuncdiStatusResponse = Response<{ Command::GetFuncdiStatus }, GetFuncdiStatusState>;
+#[derive(Serialize, Deserialize)]
+pub struct GetFuncdiStatusState {
+    pub error_code: String,
+    pub error_msg: String,
+    pub funcdi_status: [[i8; 2]; 12],
 }
 
-// drag status
-type DragStatusRequest = Request<{ Command::DragStatus }, ()>;
-type DragStatusResponse = Response<{ Command::DragStatus }, DragStatusState>;
-struct DragStatusState {
-    error_code: String,
-    error_msg: String,
-    drag_status: bool,
+// pub drag status
+pub type DragStatusRequest = Request<{ Command::DragStatus }, ()>;
+pub type DragStatusResponse = Response<{ Command::DragStatus }, DragStatusState>;
+#[derive(Serialize, Deserialize)]
+pub struct DragStatusState {
+    pub error_code: String,
+    pub error_msg: String,
+    pub drag_status: bool,
 }
 
 // query user defined variable
-type QueryUserDefinedVariableRequest = Request<{ Command::QueryUserDefinedVariable }, ()>;
-type QueryUserDefinedVariableResponse =
+pub type QueryUserDefinedVariableRequest = Request<{ Command::QueryUserDefinedVariable }, ()>;
+pub type QueryUserDefinedVariableResponse =
     Response<{ Command::QueryUserDefinedVariable }, QueryUserDefinedVariableState>;
-struct QueryUserDefinedVariableState {
-    error_code: String,
-    error_msg: String,
-    var_list: Vec<Variable>,
+#[derive(Serialize, Deserialize)]
+pub struct QueryUserDefinedVariableState {
+    pub error_code: String,
+    pub error_msg: String,
+    pub var_list: Vec<Variable>,
 }
-struct Variable {
-    alias: String,
-    id: u32,
-    value: f64,
+#[derive(Serialize, Deserialize)]
+pub struct Variable {
+    pub alias: String,
+    pub id: u32,
+    pub value: f64,
 }
 
 // modify user defined variable
-type ModifyUserDefinedVariableRequest =
+pub type ModifyUserDefinedVariableRequest =
     Request<{ Command::ModifyUserDefinedVariable }, ModifyUserDefinedVariableData>;
-type ModifyUserDefinedVariableResponse =
+pub type ModifyUserDefinedVariableResponse =
     Response<{ Command::ModifyUserDefinedVariable }, ModifyUserDefinedVariableState>;
-type ModifyUserDefinedVariableState = DefaultState;
-struct ModifyUserDefinedVariableData {
-    id_new: u32,
-    alias_new: String,
-    value_new: f64,
+pub type ModifyUserDefinedVariableState = DefaultState;
+#[derive(Serialize, Deserialize)]
+pub struct ModifyUserDefinedVariableData {
+    pub id_new: u32,
+    pub alias_new: String,
+    pub value_new: f64,
 }
 
 // protective stop status
-type ProtectiveStopStatusRequest = Request<{ Command::ProtectiveStopStatus }, ()>;
-type ProtectiveStopStatusResponse =
+pub type ProtectiveStopStatusRequest = Request<{ Command::ProtectiveStopStatus }, ()>;
+pub type ProtectiveStopStatusResponse =
     Response<{ Command::ProtectiveStopStatus }, ProtectiveStopStatusState>;
-struct ProtectiveStopStatusState {
-    error_code: String,
-    error_msg: String,
-    protective_stop: u8,
+#[derive(Serialize, Deserialize)]
+pub struct ProtectiveStopStatusState {
+    pub error_code: String,
+    pub error_msg: String,
+    pub protective_stop: u8,
 }
 
 // jog
-type JogRequest = Request<{ Command::Jog }, JogData>;
-type JogResponse = Response<{ Command::Jog }, JogState>;
-type JogState = DefaultState;
-enum JogData {
+pub type JogRequest = Request<{ Command::Jog }, JogData>;
+pub type JogResponse = Response<{ Command::Jog }, JogState>;
+pub type JogState = DefaultState;
+#[derive(Serialize, Deserialize)]
+pub enum JogData {
     Mode0 {
         coord_map: u8,
         jnum: u8,
@@ -427,7 +465,7 @@ enum JogData {
 }
 
 impl JogData {
-    fn jog_mode(&self) -> u8 {
+    pub fn jog_mode(&self) -> u8 {
         match self {
             JogData::Mode0 { .. } => 0,
             JogData::Mode1 { .. } => 1,
@@ -437,103 +475,200 @@ impl JogData {
 }
 
 // move l
-type MoveLRequest = Request<{ Command::MoveL }, MoveLData>;
-type MoveLResponse = Response<{ Command::MoveL }, MoveLState>;
-type MoveLState = DefaultState;
-struct MoveLData {
-    cart_position: [f64; 6],
-    speed: f64,
-    accel: f64,
-    relflag: u8,
+pub type MoveLRequest = Request<{ Command::MoveL }, MoveLData>;
+pub type MoveLResponse = Response<{ Command::MoveL }, MoveLState>;
+pub type MoveLState = DefaultState;
+#[derive(Serialize, Deserialize)]
+pub struct MoveLData {
+    pub cart_position: [f64; 6],
+    pub speed: f64,
+    pub accel: f64,
+    pub relflag: u8,
 }
 
 // wait complete DEPRECATED
-type WaitCompleteRequest = Request<{ Command::WaitComplete }, ()>;
-type WaitCompleteResponse = Response<{ Command::WaitComplete }, WaitCompleteState>;
-type WaitCompleteState = DefaultState;
+pub type WaitCompleteRequest = Request<{ Command::WaitComplete }, ()>;
+pub type WaitCompleteResponse = Response<{ Command::WaitComplete }, WaitCompleteState>;
+pub type WaitCompleteState = DefaultState;
 
 // set payload
-type SetPayloadRequest = Request<{ Command::SetPayload }, SetPayloadData>;
-type SetPayloadResponse = Response<{ Command::SetPayload }, SetPayloadState>;
-type SetPayloadState = DefaultState;
-struct SetPayloadData {
-    mass: f64,
-    centroid: [f64; 3],
+pub type SetPayloadRequest = Request<{ Command::SetPayload }, SetPayloadData>;
+pub type SetPayloadResponse = Response<{ Command::SetPayload }, SetPayloadState>;
+pub type SetPayloadState = DefaultState;
+#[derive(Serialize, Deserialize)]
+pub struct SetPayloadData {
+    pub mass: f64,
+    pub centroid: [f64; 3],
 }
 
 // get payload
-type GetPayloadRequest = Request<{ Command::GetPayload }, ()>;
-type GetPayloadResponse = Response<{ Command::GetPayload }, GetPayloadState>;
-struct GetPayloadState {
-    error_code: String,
-    error_msg: String,
-    mass: f64,
-    centroid: [f64; 3],
+pub type GetPayloadRequest = Request<{ Command::GetPayload }, ()>;
+pub type GetPayloadResponse = Response<{ Command::GetPayload }, GetPayloadState>;
+#[derive(Serialize, Deserialize)]
+pub struct GetPayloadState {
+    pub error_code: String,
+    pub error_msg: String,
+    pub mass: f64,
+    pub centroid: [f64; 3],
 }
 
 // set clsn sensitivity
-type SetClsnSensitivityRequest = Request<{ Command::SetClsnSensitivity }, SetClsnSensitivityData>;
-type SetClsnSensitivityResponse =
+pub type SetClsnSensitivityRequest =
+    Request<{ Command::SetClsnSensitivity }, SetClsnSensitivityData>;
+pub type SetClsnSensitivityResponse =
     Response<{ Command::SetClsnSensitivity }, SetClsnSensitivityState>;
-type SetClsnSensitivityState = DefaultState;
-struct SetClsnSensitivityData {
-    sensitivity_level: u8, // 更改了文档中的变量名以与下一命令一致
+pub type SetClsnSensitivityState = DefaultState;
+#[derive(Serialize, Deserialize)]
+pub struct SetClsnSensitivityData {
+    pub sensitivity_level: u8, // 更改了文档中的变量名以与下一命令一致
 }
 
 // get clsn sensitivity
-type GetClsnSensitivityRequest = Request<{ Command::GetClsnSensitivity }, ()>;
-type GetClsnSensitivityResponse =
+pub type GetClsnSensitivityRequest = Request<{ Command::GetClsnSensitivity }, ()>;
+pub type GetClsnSensitivityResponse =
     Response<{ Command::GetClsnSensitivity }, GetClsnSensitivityState>;
-struct GetClsnSensitivityState {
-    error_code: String,
-    error_msg: String,
-    sensitivity_level: u8,
+#[derive(Serialize, Deserialize)]
+pub struct GetClsnSensitivityState {
+    pub error_code: String,
+    pub error_msg: String,
+    pub sensitivity_level: u8,
 }
 
 // kine forward
-type KineForwardRequest = Request<{ Command::KineForward }, ()>;
-type KineForwardResponse = Response<{ Command::KineForward }, KineForwardState>;
-struct KineForwardState {
-    error_code: String,
-    error_msg: String,
-    cart_position: [f64; 6],
+pub type KineForwardRequest = Request<{ Command::KineForward }, ()>;
+pub type KineForwardResponse = Response<{ Command::KineForward }, KineForwardState>;
+#[derive(Serialize, Deserialize)]
+pub struct KineForwardState {
+    pub error_code: String,
+    pub error_msg: String,
+    pub cart_position: [f64; 6],
 }
-struct KineForwardData {
-    joint_angles: [f64; 6],
+#[derive(Serialize, Deserialize)]
+pub struct KineForwardData {
+    pub joint_angles: [f64; 6],
 }
 
 // kine inverse
-type KineInverseRequest = Request<{ Command::KineInverse }, KineInverseData>;
-type KineInverseResponse = Response<{ Command::KineInverse }, KineInverseState>;
-struct KineInverseState {
-    error_code: String,
-    error_msg: String,
-    joint_angles: [f64; 6],
+pub type KineInverseRequest = Request<{ Command::KineInverse }, KineInverseData>;
+pub type KineInverseResponse = Response<{ Command::KineInverse }, KineInverseState>;
+#[derive(Serialize, Deserialize)]
+pub struct KineInverseState {
+    pub error_code: String,
+    pub error_msg: String,
+    pub joint_angles: [f64; 6],
 }
-struct KineInverseData {
-    joint_angles: [f64; 6],
-    cart_position: [f64; 6],
+#[derive(Serialize, Deserialize)]
+pub struct KineInverseData {
+    pub joint_angles: [f64; 6],
+    pub cart_position: [f64; 6],
 }
 
 // clear error
-type ClearErrorRequest = Request<{ Command::ClearError }, ()>;
-type ClearErrorResponse = Response<{ Command::ClearError }, ClearErrorState>;
-type ClearErrorState = DefaultState;
+pub type ClearErrorRequest = Request<{ Command::ClearError }, ()>;
+pub type ClearErrorResponse = Response<{ Command::ClearError }, ClearErrorState>;
+pub type ClearErrorState = DefaultState;
 
 // get joint pos
-type GetJointPosRequest = Request<{ Command::GetJointPos }, ()>;
-type GetJointPosResponse = Response<{ Command::GetJointPos }, GetJointPosState>;
-struct GetJointPosState {
-    error_code: String,
-    error_msg: String,
-    joint_angles: [f64; 6],
+pub type GetJointPosRequest = Request<{ Command::GetJointPos }, ()>;
+pub type GetJointPosResponse = Response<{ Command::GetJointPos }, GetJointPosState>;
+#[derive(Serialize, Deserialize)]
+pub struct GetJointPosState {
+    pub error_code: String,
+    pub error_msg: String,
+    pub joint_angles: [f64; 6],
 }
 
 // get tcp pos
-type GetTcpPosRequest = Request<{ Command::GetTcpPos }, ()>;
-type GetTcpPosResponse = Response<{ Command::GetTcpPos }, GetTcpPosState>;
-struct GetTcpPosState {
-    error_code: String,
-    error_msg: String,
-    tcp_pos: [f64; 6],
+pub type GetTcpPosRequest = Request<{ Command::GetTcpPos }, ()>;
+pub type GetTcpPosResponse = Response<{ Command::GetTcpPos }, GetTcpPosState>;
+#[derive(Serialize, Deserialize)]
+pub struct GetTcpPosState {
+    pub error_code: String,
+    pub error_msg: String,
+    pub tcp_pos: [f64; 6],
 }
+
+impl<const C: Command, D> From<D> for Request<C, D> {
+    fn from(data: D) -> Self {
+        Self { data }
+    }
+}
+
+impl<const C: Command, S> From<S> for Response<C, S> {
+    fn from(state: S) -> Self {
+        Self { state }
+    }
+}
+
+impl<const C: Command, S> Response<C, S> {
+    pub fn into_state(self) -> S {
+        self.state
+    }
+}
+
+impl<const C: Command, D> CommandSerde for Request<C, D>
+where
+    D: Serialize + DeserializeOwned,
+{
+    fn serialize(&self) -> String {
+        let mut value = serde_json::to_value(&self.data).unwrap();
+        match &mut value {
+            Value::Object(obj) => {
+                obj.insert("command".to_string(), serde_json::to_value(C).unwrap());
+            }
+            Value::Null => {
+                let mut obj = serde_json::Map::new();
+                obj.insert("command".to_string(), serde_json::to_value(C).unwrap());
+                value = Value::Object(obj);
+            }
+            _ => {}
+        }
+        value.to_string()
+    }
+    fn deserialize(data: &str) -> Option<Self> {
+        let mut value: Value = serde_json::from_str(data).unwrap();
+        if let Value::Object(obj) = &mut value {
+            obj.remove("command");
+        }
+        if let Ok(data) = serde_json::from_value::<D>(value) {
+            Some(Self::from(data))
+        } else {
+            None
+        }
+    }
+}
+
+impl<const C: Command, S> CommandSerde for Response<C, S>
+where
+    S: Serialize + DeserializeOwned,
+{
+    fn serialize(&self) -> String {
+        let mut value = serde_json::to_value(&self.state).unwrap();
+        match &mut value {
+            Value::Object(obj) => {
+                obj.insert("command".to_string(), serde_json::to_value(C).unwrap());
+            }
+            Value::Null => {
+                let mut obj = serde_json::Map::new();
+                obj.insert("command".to_string(), serde_json::to_value(C).unwrap());
+                value = Value::Object(obj);
+            }
+            _ => {}
+        }
+        value.to_string()
+    }
+    fn deserialize(data: &str) -> Option<Self> {
+        let mut value: Value = serde_json::from_str(data).unwrap();
+        if let Value::Object(obj) = &mut value {
+            obj.remove("command");
+        }
+        if let Ok(state) = serde_json::from_value::<S>(value) {
+            Some(Self::from(state))
+        } else {
+            None
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {}
