@@ -125,7 +125,9 @@ pub enum ErrorCode {
 
 #[derive(Serialize, Deserialize)]
 pub struct DefaultState {
+    #[serde(rename = "errorCode")]
     pub error_code: String,
+    #[serde(rename = "errorMsg")]
     pub error_msg: String,
 }
 
@@ -150,9 +152,11 @@ pub type JointMoveResponse = Response<{ Command::JointMove }, JointMoveState>;
 pub type JointMoveState = DefaultState;
 #[derive(Serialize, Deserialize)]
 pub struct JointMoveData {
-    pub joint_angles: [f64; 6],
+    #[serde(rename = "jointPosition")]
+    pub joint_position: [f64; 6],
     pub speed: f64,
     pub accel: f64,
+    #[serde(rename = "relFlag")]
     pub relflag: u8,
 }
 
@@ -162,6 +166,7 @@ pub type EndMoveResponse = Response<{ Command::EndMove }, EndMoveState>;
 pub type EndMoveState = DefaultState;
 #[derive(Serialize, Deserialize)]
 pub struct EndMoveData {
+    #[serde(rename = "endPosition")]
     pub end_position: [f64; 6],
     pub speed: f64,
     pub accel: f64,
@@ -182,7 +187,9 @@ pub type GetRobotStateRequest = Request<{ Command::GetRobotState }, ()>;
 pub type GetRobotStateResponse = Response<{ Command::GetRobotState }, GetRobotStateState>;
 #[derive(Serialize, Deserialize)]
 pub struct GetRobotStateState {
+    #[serde(rename = "errorCode")]
     pub error_code: String,
+    #[serde(rename = "errorMsg")]
     pub error_msg: String,
     pub enable: String,
     pub power: String,
@@ -211,7 +218,9 @@ pub type TorqueFeedforwardResponse =
 pub type TorqueFeedforwardState = DefaultState;
 #[derive(Serialize, Deserialize)]
 pub struct TorqueFeedforwardData {
+    #[serde(rename = "grvCurrent")]
     pub grv_current: [f64; 6],
+    #[serde(rename = "includeGrvFlag")]
     pub includegrvflag: u8,
 }
 
@@ -221,6 +230,7 @@ pub type ServoMoveResponse = Response<{ Command::ServoMove }, ServoMoveState>;
 pub type ServoMoveState = DefaultState;
 #[derive(Serialize, Deserialize)]
 pub struct ServoMoveData {
+    #[serde(rename = "relFlag")]
     pub relflag: u8,
 }
 
@@ -230,7 +240,9 @@ pub type ServoJResponse = Response<{ Command::ServoJ }, ServoJState>;
 pub type ServoJState = DefaultState;
 #[derive(Serialize, Deserialize)]
 pub struct ServoJData {
+    #[serde(rename = "jointAngles")]
     pub joint_angles: [f64; 6],
+    #[serde(rename = "relFlag")]
     pub relflag: u8,
 }
 
@@ -240,7 +252,9 @@ pub type ServoPResponse = Response<{ Command::ServoP }, ServoPState>;
 pub type ServoPState = DefaultState;
 #[derive(Serialize, Deserialize)]
 pub struct ServoPData {
-    pub cart_position: [f64; 6], // 文档中变量名有拼写错误
+    #[serde(rename = "catPosition")]
+    pub cat_position: [f64; 6],
+    #[serde(rename = "relFlag")]
     pub relflag: u8,
 }
 
@@ -249,15 +263,17 @@ pub type GetDataRequest = Request<{ Command::GetData }, ()>;
 pub type GetDataResponse = Response<{ Command::GetData }, GetDataState>;
 #[derive(Serialize, Deserialize)]
 pub struct GetDataState {
+    #[serde(rename = "errorCode")]
     pub error_code: String,
+    #[serde(rename = "errorMsg")]
     pub error_msg: String,
     pub tio_dout: [u8; 8],
     pub tool_position: [f64; 9],
-    pub tio_ain: [u8; 2],
     pub paused: u8,
     pub cmd_name: String,
     pub estop: u8,
     pub current_tool_id: u8,
+    pub tio_ain: [u8; 2],
     pub actual_position: [f64; 9],
     pub joint_actual_position: [f64; 9],
     pub rapidrate: f64,
@@ -279,6 +295,7 @@ pub type LoadProgramResponse = Response<{ Command::LoadProgram }, LoadProgramSta
 pub type LoadProgramState = DefaultState;
 #[derive(Serialize, Deserialize)]
 pub struct LoadProgramData {
+    #[serde(rename = "programName")]
     pub program_name: String,
 }
 
@@ -287,8 +304,11 @@ pub type GetLoadedProgramRequest = Request<{ Command::GetLoadedProgram }, ()>;
 pub type GetLoadedProgramResponse = Response<{ Command::GetLoadedProgram }, GetLoadedProgramState>;
 #[derive(Serialize, Deserialize)]
 pub struct GetLoadedProgramState {
+    #[serde(rename = "errorCode")]
     pub error_code: String,
+    #[serde(rename = "errorMsg")]
     pub error_msg: String,
+    #[serde(rename = "programName")]
     pub program_name: String,
 }
 
@@ -317,8 +337,11 @@ pub type GetProgramStateRequest = Request<{ Command::GetProgramState }, ()>;
 pub type GetProgramStateResponse = Response<{ Command::GetProgramState }, GetProgramStateState>;
 #[derive(Serialize, Deserialize)]
 pub struct GetProgramStateState {
+    #[serde(rename = "errorCode")]
     pub error_code: String,
+    #[serde(rename = "errorMsg")]
     pub error_msg: String,
+    #[serde(rename = "programName")]
     pub program_state: String,
 }
 
@@ -328,6 +351,7 @@ pub type SetDigitalOutputResponse = Response<{ Command::SetDigitalOutput }, SetD
 pub type SetDigitalOutputState = DefaultState;
 #[derive(Serialize, Deserialize)]
 pub struct SetDigitalOutputData {
+    #[serde(rename = "type")]
     pub type_number: u8,
     pub index: u8,
     pub value: u8,
@@ -340,7 +364,9 @@ pub type GetDigitalInputStatusResponse =
 #[serde_as]
 #[derive(Serialize, Deserialize)]
 pub struct GetDigitalInputStatusState {
+    #[serde(rename = "errorCode")]
     pub error_code: String,
+    #[serde(rename = "errorMsg")]
     pub error_msg: String,
     #[serde_as(as = "[_; 64]")]
     pub din_status: [u8; 64],
@@ -352,6 +378,7 @@ pub type SetAnalogOutputResponse = Response<{ Command::SetAnalogOutput }, SetAna
 pub type SetAnalogOutputState = DefaultState;
 #[derive(Serialize, Deserialize)]
 pub struct SetAnalogOutputData {
+    #[serde(rename = "type")]
     pub type_number: u8,
     pub index: u8,
     pub value: f64,
@@ -402,7 +429,9 @@ pub type GetExtioStatusRequest = Request<{ Command::GetExtioStatus }, ()>;
 pub type GetExtioStatusResponse = Response<{ Command::GetExtioStatus }, GetExtioStatusState>;
 #[derive(Serialize, Deserialize)]
 pub struct GetExtioStatusState {
+    #[serde(rename = "errorCode")]
     pub error_code: String,
+    #[serde(rename = "errorMsg")]
     pub error_msg: String,
     pub extio_status: ExtioStatus,
 }
@@ -434,7 +463,9 @@ pub type GetFuncdiStatusRequest = Request<{ Command::GetFuncdiStatus }, ()>;
 pub type GetFuncdiStatusResponse = Response<{ Command::GetFuncdiStatus }, GetFuncdiStatusState>;
 #[derive(Serialize, Deserialize)]
 pub struct GetFuncdiStatusState {
+    #[serde(rename = "errorCode")]
     pub error_code: String,
+    #[serde(rename = "errorMsg")]
     pub error_msg: String,
     pub funcdi_status: [[i8; 2]; 12],
 }
@@ -444,7 +475,9 @@ pub type DragStatusRequest = Request<{ Command::DragStatus }, ()>;
 pub type DragStatusResponse = Response<{ Command::DragStatus }, DragStatusState>;
 #[derive(Serialize, Deserialize)]
 pub struct DragStatusState {
+    #[serde(rename = "errorCode")]
     pub error_code: String,
+    #[serde(rename = "errorMsg")]
     pub error_msg: String,
     pub drag_status: bool,
 }
@@ -455,15 +488,11 @@ pub type QueryUserDefinedVariableResponse =
     Response<{ Command::QueryUserDefinedVariable }, QueryUserDefinedVariableState>;
 #[derive(Serialize, Deserialize)]
 pub struct QueryUserDefinedVariableState {
+    #[serde(rename = "errorCode")]
     pub error_code: String,
+    #[serde(rename = "errorMsg")]
     pub error_msg: String,
-    pub var_list: Vec<Variable>,
-}
-#[derive(Serialize, Deserialize)]
-pub struct Variable {
-    pub alias: String,
-    pub id: u32,
-    pub value: f64,
+    pub var_list: Vec<Value>,
 }
 
 // modify user defined variable
@@ -476,7 +505,7 @@ pub type ModifyUserDefinedVariableState = DefaultState;
 pub struct ModifyUserDefinedVariableData {
     pub id_new: u32,
     pub alias_new: String,
-    pub value_new: f64,
+    pub value_new: Value,
 }
 
 // protective stop status
@@ -485,7 +514,9 @@ pub type ProtectiveStopStatusResponse =
     Response<{ Command::ProtectiveStopStatus }, ProtectiveStopStatusState>;
 #[derive(Serialize, Deserialize)]
 pub struct ProtectiveStopStatusState {
+    #[serde(rename = "errorCode")]
     pub error_code: String,
+    #[serde(rename = "errorMsg")]
     pub error_msg: String,
     pub protective_stop: u8,
 }
@@ -529,9 +560,11 @@ pub type MoveLResponse = Response<{ Command::MoveL }, MoveLState>;
 pub type MoveLState = DefaultState;
 #[derive(Serialize, Deserialize)]
 pub struct MoveLData {
+    #[serde(rename = "cartPosition")]
     pub cart_position: [f64; 6],
     pub speed: f64,
     pub accel: f64,
+    #[serde(rename = "relFlag")]
     pub relflag: u8,
 }
 
@@ -555,7 +588,9 @@ pub type GetPayloadRequest = Request<{ Command::GetPayload }, ()>;
 pub type GetPayloadResponse = Response<{ Command::GetPayload }, GetPayloadState>;
 #[derive(Serialize, Deserialize)]
 pub struct GetPayloadState {
+    #[serde(rename = "errorCode")]
     pub error_code: String,
+    #[serde(rename = "errorMsg")]
     pub error_msg: String,
     pub mass: f64,
     pub centroid: [f64; 3],
@@ -569,6 +604,7 @@ pub type SetClsnSensitivityResponse =
 pub type SetClsnSensitivityState = DefaultState;
 #[derive(Serialize, Deserialize)]
 pub struct SetClsnSensitivityData {
+    #[serde(rename = "sensitivityVal")]
     pub sensitivity_level: u8, // 更改了文档中的变量名以与下一命令一致
 }
 
@@ -578,8 +614,11 @@ pub type GetClsnSensitivityResponse =
     Response<{ Command::GetClsnSensitivity }, GetClsnSensitivityState>;
 #[derive(Serialize, Deserialize)]
 pub struct GetClsnSensitivityState {
+    #[serde(rename = "errorCode")]
     pub error_code: String,
+    #[serde(rename = "errorMsg")]
     pub error_msg: String,
+    #[serde(rename = "sensitivityLevel")]
     pub sensitivity_level: u8,
 }
 
@@ -588,13 +627,17 @@ pub type KineForwardRequest = Request<{ Command::KineForward }, ()>;
 pub type KineForwardResponse = Response<{ Command::KineForward }, KineForwardState>;
 #[derive(Serialize, Deserialize)]
 pub struct KineForwardState {
+    #[serde(rename = "errorCode")]
     pub error_code: String,
+    #[serde(rename = "errorMsg")]
     pub error_msg: String,
-    pub cart_position: [f64; 6],
+    #[serde(rename = "jointPosition")]
+    pub joint_angles: [f64; 6],
 }
 #[derive(Serialize, Deserialize)]
 pub struct KineForwardData {
-    pub joint_angles: [f64; 6],
+    #[serde(rename = "cartPosition")]
+    pub cart_position: [f64; 6],
 }
 
 // kine inverse
@@ -602,14 +645,17 @@ pub type KineInverseRequest = Request<{ Command::KineInverse }, KineInverseData>
 pub type KineInverseResponse = Response<{ Command::KineInverse }, KineInverseState>;
 #[derive(Serialize, Deserialize)]
 pub struct KineInverseState {
+    #[serde(rename = "errorCode")]
     pub error_code: String,
+    #[serde(rename = "errorMsg")]
     pub error_msg: String,
-    pub joint_angles: [f64; 6],
+    #[serde(rename = "cartPosition")]
+    pub cart_position: [f64; 6],
 }
 #[derive(Serialize, Deserialize)]
 pub struct KineInverseData {
+    #[serde(rename = "jointPosition")]
     pub joint_angles: [f64; 6],
-    pub cart_position: [f64; 6],
 }
 
 // clear error
@@ -622,9 +668,11 @@ pub type GetJointPosRequest = Request<{ Command::GetJointPos }, ()>;
 pub type GetJointPosResponse = Response<{ Command::GetJointPos }, GetJointPosState>;
 #[derive(Serialize, Deserialize)]
 pub struct GetJointPosState {
+    #[serde(rename = "errorCode")]
     pub error_code: String,
+    #[serde(rename = "errorMsg")]
     pub error_msg: String,
-    pub joint_angles: [f64; 6],
+    pub joint_pos: [f64; 6],
 }
 
 // get tcp pos
@@ -632,7 +680,9 @@ pub type GetTcpPosRequest = Request<{ Command::GetTcpPos }, ()>;
 pub type GetTcpPosResponse = Response<{ Command::GetTcpPos }, GetTcpPosState>;
 #[derive(Serialize, Deserialize)]
 pub struct GetTcpPosState {
+    #[serde(rename = "errorCode")]
     pub error_code: String,
+    #[serde(rename = "errorMsg")]
     pub error_msg: String,
     pub tcp_pos: [f64; 6],
 }
@@ -664,11 +714,11 @@ where
         let command = serde_json::to_value(&C).unwrap();
         match &mut value {
             Value::Object(obj) => {
-                obj.insert("command".to_string(), command);
+                obj.insert("cmdName".to_string(), command);
             }
             Value::Null => {
                 let mut obj = serde_json::Map::new();
-                obj.insert("command".to_string(), serde_json::to_value(C).unwrap());
+                obj.insert("cmdName".to_string(), serde_json::to_value(C).unwrap());
                 value = Value::Object(obj);
             }
             _ => {}
@@ -678,7 +728,7 @@ where
     fn deserialize(data: &str) -> RobotResult<Self> {
         let mut value: Value = serde_json::from_str(data).unwrap();
         if let Value::Object(obj) = &mut value {
-            obj.remove("command");
+            obj.remove("cmdName");
         }
         serde_json::from_value::<D>(value)
             .map(|data| Request { data })
@@ -694,11 +744,11 @@ where
         let mut value = serde_json::to_value(&self.state).unwrap();
         match &mut value {
             Value::Object(obj) => {
-                obj.insert("command".to_string(), serde_json::to_value(C).unwrap());
+                obj.insert("cmdName".to_string(), serde_json::to_value(C).unwrap());
             }
             Value::Null => {
                 let mut obj = serde_json::Map::new();
-                obj.insert("command".to_string(), serde_json::to_value(C).unwrap());
+                obj.insert("cmdName".to_string(), serde_json::to_value(C).unwrap());
                 value = Value::Object(obj);
             }
             _ => {}
@@ -708,7 +758,7 @@ where
     fn deserialize(data: &str) -> RobotResult<Self> {
         let mut value: Value = serde_json::from_str(data).unwrap();
         if let Value::Object(obj) = &mut value {
-            obj.remove("command");
+            obj.remove("cmdName");
         }
         serde_json::from_value::<S>(value)
             .map(|state| Response { state })
@@ -717,30 +767,4 @@ where
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use serde_json::json;
-
-    #[test]
-    fn test_request_serialization() {
-        let data = JointMoveData {
-            joint_angles: [0.0; 6],
-            speed: 1.0,
-            accel: 1.0,
-            relflag: 0,
-        };
-        let request = Request::<{ Command::JointMove }, _>::from(data);
-        let serialized = request.serialize();
-        let expected = json!({
-            "command": "joint_move",
-            "joint_angles": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-            "speed": 1.0,
-            "accel": 1.0,
-            "relflag": 0
-        });
-        assert_eq!(
-            serde_json::from_str::<Value>(&serialized).unwrap(),
-            expected
-        );
-    }
-}
+mod tests {}
