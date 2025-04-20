@@ -1,63 +1,112 @@
 use std::marker::ConstParamTy;
 
+use robot_behavior::{RobotException, RobotResult};
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use serde_json::Value;
 use serde_with::serde_as;
 
 pub trait CommandSerde: Sized {
     fn serialize(&self) -> String;
-    fn deserialize(data: &str) -> Option<Self>;
+    fn deserialize(data: &str) -> RobotResult<Self>;
 }
 
 #[derive(ConstParamTy, PartialEq, Eq, Serialize, Deserialize, Debug)]
 pub enum Command {
+    #[serde(rename = "power_on")]
     PowerOn,
+    #[serde(rename = "power_off")]
     PowerOff,
+    #[serde(rename = "enable_robot")]
     EnableRobot,
+    #[serde(rename = "joint_move")]
     JointMove,
+    #[serde(rename = "end_move")]
     EndMove,
+    #[serde(rename = "shutdown")]
     Shutdown,
+    #[serde(rename = "quit")]
     Quit,
+    #[serde(rename = "get_robot_state")]
     GetRobotState,
+    #[serde(rename = "disable_robot")]
     DisableRobot,
+    #[serde(rename = "torque_control_enable")]
     TorqueControlEnable,
+    #[serde(rename = "torque_feedforward")]
     TorqueFeedforward,
+    #[serde(rename = "servo_move")]
     ServoMove,
+    #[serde(rename = "servo_j")]
     ServoJ,
+    #[serde(rename = "servo_p")]
     ServoP,
+    #[serde(rename = "get_data")]
     GetData,
+    #[serde(rename = "rapid_rate")]
     RapidRate,
+    #[serde(rename = "load_program")]
     LoadProgram,
+    #[serde(rename = "get_loaded_program")]
     GetLoadedProgram,
+    #[serde(rename = "play_program")]
     PlayProgram,
+    #[serde(rename = "pause_program")]
     PauseProgram,
+    #[serde(rename = "resume_program")]
     ResumeProgram,
+    #[serde(rename = "stop_program")]
     StopProgram,
+    #[serde(rename = "get_program_state")]
     GetProgramState,
+    #[serde(rename = "set_digital_output")]
     SetDigitalOutput,
+    #[serde(rename = "get_digital_input_status")]
     GetDigitalInputStatus,
+    #[serde(rename = "set_analog_output")]
     SetAnalogOutput,
+    #[serde(rename = "set_tool_offsets")]
     SetToolOffsets,
+    #[serde(rename = "set_tool_id")]
     SetToolId,
+    #[serde(rename = "set_user_offsets")]
     SetUserOffsets,
+    #[serde(rename = "set_user_id")]
     SetUserId,
+    #[serde(rename = "get_extio_status")]
     GetExtioStatus,
+    #[serde(rename = "get_funcdi_status")]
     GetFuncdiStatus,
+    #[serde(rename = "drag_status")]
     DragStatus,
+    #[serde(rename = "query_user_defined_variable")]
     QueryUserDefinedVariable,
+    #[serde(rename = "modify_user_defined_variable")]
     ModifyUserDefinedVariable,
+    #[serde(rename = "protective_stop_status")]
     ProtectiveStopStatus,
+    #[serde(rename = "jog")]
     Jog,
+    #[serde(rename = "move_l")]
     MoveL,
+    #[serde(rename = "wait_complete")] //DEPRECATED
     WaitComplete, //DEPRECATED
+    #[serde(rename = "set_payload")]
     SetPayload,
+    #[serde(rename = "get_payload")]
     GetPayload,
+    #[serde(rename = "set_clsn_sensitivity")]
     SetClsnSensitivity,
+    #[serde(rename = "get_clsn_sensitivity")]
     GetClsnSensitivity,
+    #[serde(rename = "kine_forward")]
     KineForward,
+    #[serde(rename = "kine_inverse")]
     KineInverse,
+    #[serde(rename = "clear_error")]
     ClearError,
+    #[serde(rename = "get_joint_pos")]
     GetJointPos,
+    #[serde(rename = "get_tcp_pos")]
     GetTcpPos,
 }
 pub struct Request<const C: Command, D> {
@@ -612,9 +661,10 @@ where
 {
     fn serialize(&self) -> String {
         let mut value = serde_json::to_value(&self.data).unwrap();
+        let command = serde_json::to_value(&C).unwrap();
         match &mut value {
             Value::Object(obj) => {
-                obj.insert("command".to_string(), serde_json::to_value(C).unwrap());
+                obj.insert("command".to_string(), command);
             }
             Value::Null => {
                 let mut obj = serde_json::Map::new();
@@ -625,16 +675,14 @@ where
         }
         value.to_string()
     }
-    fn deserialize(data: &str) -> Option<Self> {
+    fn deserialize(data: &str) -> RobotResult<Self> {
         let mut value: Value = serde_json::from_str(data).unwrap();
         if let Value::Object(obj) = &mut value {
             obj.remove("command");
         }
-        if let Ok(data) = serde_json::from_value::<D>(value) {
-            Some(Self::from(data))
-        } else {
-            None
-        }
+        serde_json::from_value::<D>(value)
+            .map(|data| Request { data })
+            .map_err(|e| RobotException::DeserializeError(e.to_string()))
     }
 }
 
@@ -657,18 +705,42 @@ where
         }
         value.to_string()
     }
-    fn deserialize(data: &str) -> Option<Self> {
+    fn deserialize(data: &str) -> RobotResult<Self> {
         let mut value: Value = serde_json::from_str(data).unwrap();
         if let Value::Object(obj) = &mut value {
             obj.remove("command");
         }
-        if let Ok(state) = serde_json::from_value::<S>(value) {
-            Some(Self::from(state))
-        } else {
-            None
-        }
+        serde_json::from_value::<S>(value)
+            .map(|state| Response { state })
+            .map_err(|e| RobotException::DeserializeError(e.to_string()))
     }
 }
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_request_serialization() {
+        let data = JointMoveData {
+            joint_angles: [0.0; 6],
+            speed: 1.0,
+            accel: 1.0,
+            relflag: 0,
+        };
+        let request = Request::<{ Command::JointMove }, _>::from(data);
+        let serialized = request.serialize();
+        let expected = json!({
+            "command": "joint_move",
+            "joint_angles": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "speed": 1.0,
+            "accel": 1.0,
+            "relflag": 0
+        });
+        assert_eq!(
+            serde_json::from_str::<Value>(&serialized).unwrap(),
+            expected
+        );
+    }
+}

@@ -104,6 +104,7 @@ impl RobotBehavior for JakaRobot {
         unimplemented!()
     }
     fn enable(&mut self) -> RobotResult<()> {
+        self._power_on()?;
         self._enable()?;
         Ok(())
     }

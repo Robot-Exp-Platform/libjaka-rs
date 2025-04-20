@@ -53,10 +53,16 @@ impl NetWork {
         S: CommandSerde,
     {
         if let Some(tcp_cmd) = &mut self.tcp_cmd {
-            tcp_cmd.write_all(data.serialize().as_bytes()).unwrap();
+            let data = data.serialize();
+            #[cfg(feature = "debug")]
+            println!("Sending command: {}", data);
+            tcp_cmd.write_all(data.as_bytes()).unwrap();
             let mut buffer = [0; 1024];
             let size = tcp_cmd.read(&mut buffer).unwrap();
-            let data = S::deserialize(std::str::from_utf8(&buffer[..size]).unwrap()).unwrap();
+            let data = std::str::from_utf8(&buffer[..size]).unwrap();
+            #[cfg(feature = "debug")]
+            println!("Received response: {}", data);
+            let data = S::deserialize(data).unwrap();
             Ok(data)
         } else {
             Err(RobotException::NetworkError(
