@@ -1,7 +1,7 @@
 use crate::{JAKA_DOF, JAKA_VERSION, network::NetWork, types::*};
 use robot_behavior::{
-    ArmBehavior, ArmPreplannedMotion, ArmState, ControlType, LoadState, MotionType, RobotBehavior,
-    RobotResult,
+    ArmBehavior, ArmPreplannedMotion, ArmPreplannedMotionExt, ArmState, ControlType, LoadState,
+    MotionType, Pose, RobotBehavior, RobotResult,
 };
 use std::sync::{Arc, RwLock};
 
@@ -50,7 +50,7 @@ impl JakaRobot {
     cmd_fn!(_power_off, {Command::PowerOff};; PowerOffState);
     cmd_fn!(_enable, {Command::EnableRobot};; EnableRobotState);
     cmd_fn!(_joint_move, {Command::JointMove}; data: JointMoveData; JointMoveState);
-    cmd_fn!(_end_move, {Command::EndMove};; EndMoveState);
+    cmd_fn!(_end_move, {Command::EndMove};data: EndMoveData; EndMoveState);
     cmd_fn!(_shutdown, {Command::Shutdown};; ShutdownState);
     cmd_fn!(_quit, {Command::Quit};; QuitState);
     cmd_fn!(_get_robot_state, {Command::GetRobotState};; GetRobotStateState);
@@ -173,6 +173,74 @@ impl ArmPreplannedMotion<JAKA_DOF> for JakaRobot {
     }
 }
 
+impl ArmPreplannedMotionExt<JAKA_DOF> for JakaRobot {
+    fn move_path_prepare(&mut self, _path: Vec<MotionType<JAKA_DOF>>) -> RobotResult<()> {
+        unimplemented!()
+    }
+    fn move_path_start(&mut self) -> RobotResult<()> {
+        unimplemented!()
+    }
+    fn move_joint(&mut self, target: &[f64; JAKA_DOF], speed: f64) -> RobotResult<()> {
+        let move_data = JointMoveData {
+            joint_position: *target,
+            speed,
+            accel: 1.0, // 未定义参数
+            relflag: 0,
+        };
+        self._joint_move(move_data)?;
+        Ok(())
+    }
+    fn move_joint_async(&mut self, target: &[f64; JAKA_DOF], speed: f64) -> RobotResult<()> {
+        unimplemented!()
+    }
+    fn move_joint_rel(&mut self, target: &[f64; JAKA_DOF], speed: f64) -> RobotResult<()> {
+        let move_data = JointMoveData {
+            joint_position: *target,
+            speed,
+            accel: 1.0, // 未定义参数
+            relflag: 1,
+        };
+        self._joint_move(move_data)?;
+        Ok(())
+    }
+    fn move_joint_rel_async(&mut self, target: &[f64; JAKA_DOF], speed: f64) -> RobotResult<()> {
+        unimplemented!()
+    }
+
+    fn move_cartesian(&mut self, target: &Pose, speed: f64) -> RobotResult<()> {
+        // 统一转换为Isometry3格式，再提取位置和欧拉角
+        let iso = target.quat();
+        let translation = iso.translation.vector;
+        let euler = iso.rotation.euler_angles();
+
+        let end_position = [
+            translation.x,
+            translation.y,
+            translation.z,
+            euler.0, // roll
+            euler.1, // pitch
+            euler.2, // yaw
+        ];
+
+        // 创建末端运动数据
+        let move_data = EndMoveData {
+            end_position,
+            speed,
+            accel: 1.0, // 未定义参数
+        };
+        self._end_move(move_data)?;
+        Ok(())
+    }
+    fn move_cartesian_async(&mut self, target: &Pose, speed: f64) -> RobotResult<()> {
+        unimplemented!()
+    }
+    fn move_cartesian_rel(&mut self, target: &Pose, speed: f64) -> RobotResult<()> {
+        unimplemented!()
+    }
+    fn move_cartesian_rel_async(&mut self, target: &Pose, speed: f64) -> RobotResult<()> {
+        unimplemented!()
+    }
+}
 // impl ArmStreamingMotion for JakaRobot {}
 
 // impl ArmStreamingMotionExt for JakaRobot {}
