@@ -86,7 +86,7 @@ pub enum Command {
     ProtectiveStopStatus,
     #[serde(rename = "jog")]
     Jog,
-    #[serde(rename = "move_l")]
+    #[serde(rename = "moveL")]
     MoveL,
     #[serde(rename = "wait_complete")] //DEPRECATED
     WaitComplete, //DEPRECATED

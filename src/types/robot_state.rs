@@ -193,7 +193,7 @@ impl StateSerde for RobotState {
                 "drag_near_limit" => {
                     state.drag_near_limit = <[[bool; 6]; 1]>::state_from_str(value)
                 }
-                _ => unreachable!(),
+                _ => (),
             }
         }
         state

@@ -14,7 +14,7 @@ pub struct JakaRobot {
 
 macro_rules! cmd_fn {
     ($fn_name:ident, $command:expr; $arg_name:ident: $arg_type:ty; $ret_type:ty) => {
-        fn $fn_name(&mut self, arg: $arg_type) -> RobotResult<$ret_type> {
+        pub fn $fn_name(&mut self, arg: $arg_type) -> RobotResult<$ret_type> {
             let response: Response<$command, $ret_type> =
                 self.network
                     .send_and_recv(Request::<$command, $arg_type>::from(arg))?;
@@ -22,7 +22,7 @@ macro_rules! cmd_fn {
         }
     };
     ($fn_name:ident, $command:expr;; $ret_type:ty) => {
-        fn $fn_name(&mut self) -> RobotResult<$ret_type> {
+        pub fn $fn_name(&mut self) -> RobotResult<$ret_type> {
             let response: Response<$command, $ret_type> =
                 self.network
                     .send_and_recv(Request::<$command, ()>::from(()))?;
