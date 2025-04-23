@@ -94,23 +94,31 @@ impl JakaRobot {
     cmd_fn!(_clear_error, {Command::ClearError};; ClearErrorState);
     cmd_fn!(_get_joint_pos, {Command::GetJointPos};; GetJointPosState);
     cmd_fn!(_get_tcp_pos, {Command::GetTcpPos};; GetTcpPosState);
+
+    pub fn set_speed(&mut self, speed: f64) -> RobotResult<()> {
+        let rapid_rate_data = RapidRateData { rate_value: speed };
+        self._rapid_rate(rapid_rate_data)?;
+        Ok(())
+    }
 }
 
 impl RobotBehavior for JakaRobot {
+    type State = RobotState;
     fn version(&self) -> String {
         JAKA_VERSION.to_string()
     }
     fn init(&mut self) -> RobotResult<()> {
-        unimplemented!()
+        self._power_on()?.into()
+    }
+    fn shutdown(&mut self) -> RobotResult<()> {
+        self._power_off()?.into()
     }
     fn enable(&mut self) -> RobotResult<()> {
-        self._power_on()?;
-        self._enable()?;
-        Ok(())
+        let _ = self._power_on()?;
+        self._enable()?.into()
     }
     fn disable(&mut self) -> RobotResult<()> {
-        self._disable()?;
-        Ok(())
+        self._disable()?.into()
     }
     fn is_moving(&mut self) -> bool {
         self.is_moving
@@ -124,9 +132,6 @@ impl RobotBehavior for JakaRobot {
     fn resume(&mut self) -> RobotResult<()> {
         unimplemented!()
     }
-    fn shutdown(&mut self) -> RobotResult<()> {
-        unimplemented!()
-    }
     fn stop(&mut self) -> RobotResult<()> {
         unimplemented!()
     }
@@ -136,14 +141,13 @@ impl RobotBehavior for JakaRobot {
     fn clear_emergency_stop(&mut self) -> RobotResult<()> {
         unimplemented!()
     }
-}
-
-impl ArmBehavior<JAKA_DOF> for JakaRobot {
-    type State = RobotState;
     fn read_state(&mut self) -> RobotResult<Self::State> {
         let state = self.robot_state.read().unwrap();
         Ok(state.clone())
     }
+}
+
+impl ArmBehavior<JAKA_DOF> for JakaRobot {
     fn state(&mut self) -> RobotResult<ArmState<JAKA_DOF>> {
         unimplemented!()
     }

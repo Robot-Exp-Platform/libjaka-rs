@@ -687,6 +687,19 @@ pub struct GetTcpPosState {
     pub tcp_pos: [f64; 6],
 }
 
+impl From<DefaultState> for RobotResult<()> {
+    fn from(state: DefaultState) -> Self {
+        if state.error_code == "0" {
+            Ok(())
+        } else {
+            Err(RobotException::CommandException(format!(
+                "[{}: {}]",
+                state.error_code, state.error_msg
+            )))
+        }
+    }
+}
+
 impl<const C: Command, D> From<D> for Request<C, D> {
     fn from(data: D) -> Self {
         Self { data }
