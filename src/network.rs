@@ -29,16 +29,20 @@ impl NetWork {
         let state_clone = Arc::clone(&state);
         let ip_owned = ip.to_string();
         thread::spawn(move || {
-            let tcp_state = TcpStream::connect(format!("{}:{}", ip_owned, PORT_STATE)).unwrap();
+            let mut tcp_state = TcpStream::connect(format!("{}:{}", ip_owned, PORT_STATE)).unwrap();
 
             loop {
-                let mut buffer = [0; 1024];
-                let size = tcp_state.peek(&mut buffer).unwrap();
-                if size == 0 {
-                    println!("Connection closed by server.");
-                    break;
+                let mut receive_buffer = Vec::new();
+                loop {
+                    let mut buffer = vec![0_u8; 1024 * 5];
+                    if let Ok(size) = tcp_state.read(&mut buffer) {
+                        receive_buffer.append(&mut buffer[..size].to_vec());
+                        println!("size:{}", size);
+                    } else {
+                        break;
+                    }
                 }
-                let data = S::state_from_str(std::str::from_utf8(&buffer[..size]).unwrap());
+                let data = S::state_from_str(std::str::from_utf8(&receive_buffer).unwrap());
 
                 let mut write_guard = state.write().unwrap();
                 *write_guard = data;

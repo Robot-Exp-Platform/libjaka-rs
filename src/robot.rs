@@ -1,4 +1,7 @@
-use crate::{JAKA_DOF, JAKA_VERSION, network::NetWork, types::*};
+use crate::{
+    JAKA_DOF, JAKA_ROBOT_MAX_CARTESIAN_VEL, JAKA_ROBOT_MAX_JOINT_VEL, JAKA_VERSION,
+    network::NetWork, types::*,
+};
 use robot_behavior::{
     ArmBehavior, ArmPreplannedMotion, ArmPreplannedMotionExt, ArmState, ControlType, LoadState,
     MotionType, Pose, RobotBehavior, RobotException, RobotResult, utils::combine_array,
@@ -193,13 +196,19 @@ impl ArmPreplannedMotionExt<JAKA_DOF> for JakaRobot {
     fn move_path_start(&mut self) -> RobotResult<()> {
         unimplemented!()
     }
-    fn move_joint(&mut self, target: &[f64; JAKA_DOF], speed: f64) -> RobotResult<()> {
+    fn move_joint(&mut self, _target: &[f64; JAKA_DOF], _speed: f64) -> RobotResult<()> {
+        unimplemented!()
+    }
+
+    fn move_joint_async(&mut self, target: &[f64; JAKA_DOF], speed: f64) -> RobotResult<()> {
         if self.is_moving {
             return Err(RobotException::CommandException(
                 "Robot is moving".to_string(),
             ));
         }
         self.is_moving = true;
+
+        let speed = speed * JAKA_ROBOT_MAX_JOINT_VEL[0];
 
         let move_data = JointMoveData {
             joint_position: *target,
@@ -212,13 +221,19 @@ impl ArmPreplannedMotionExt<JAKA_DOF> for JakaRobot {
         self.is_moving = false;
         Ok(())
     }
-    fn move_joint_rel(&mut self, target: &[f64; JAKA_DOF], speed: f64) -> RobotResult<()> {
+
+    fn move_joint_rel(&mut self, _target: &[f64; JAKA_DOF], _speed: f64) -> RobotResult<()> {
+        unimplemented!()
+    }
+    fn move_joint_rel_async(&mut self, target: &[f64; JAKA_DOF], speed: f64) -> RobotResult<()> {
         if self.is_moving {
             return Err(RobotException::CommandException(
                 "Robot is moving".to_string(),
             ));
         }
         self.is_moving = true;
+
+        let speed = speed * JAKA_ROBOT_MAX_JOINT_VEL[0];
 
         let move_data = JointMoveData {
             joint_position: *target,
@@ -231,11 +246,11 @@ impl ArmPreplannedMotionExt<JAKA_DOF> for JakaRobot {
         self.is_moving = false;
         Ok(())
     }
-    fn move_joint_rel_async(&mut self, _target: &[f64; JAKA_DOF], _speed: f64) -> RobotResult<()> {
+
+    fn move_cartesian(&mut self, _target: &Pose, _speed: f64) -> RobotResult<()> {
         unimplemented!()
     }
-
-    fn move_cartesian(&mut self, target: &Pose, speed: f64) -> RobotResult<()> {
+    fn move_cartesian_async(&mut self, target: &Pose, speed: f64) -> RobotResult<()> {
         if self.is_moving {
             return Err(RobotException::CommandException(
                 "Robot is moving".to_string(),
@@ -243,25 +258,44 @@ impl ArmPreplannedMotionExt<JAKA_DOF> for JakaRobot {
         }
         self.is_moving = true;
 
+        let speed = speed * JAKA_ROBOT_MAX_CARTESIAN_VEL;
+
         let (tran, rot) = target.euler();
-        let move_data = EndMoveData {
-            end_position: combine_array(&tran, &rot),
+        let move_data = MoveLData {
+            cart_position: combine_array(&tran, &rot),
             speed,
             accel: 1.0,
+            relflag: 0,
         };
-        self._end_move(move_data)?;
+        self._move_l(move_data)?;
 
         self.is_moving = false;
         Ok(())
     }
-    fn move_cartesian_async(&mut self, _target: &Pose, _speed: f64) -> RobotResult<()> {
-        unimplemented!()
-    }
     fn move_cartesian_rel(&mut self, _target: &Pose, _speed: f64) -> RobotResult<()> {
         unimplemented!()
     }
-    fn move_cartesian_rel_async(&mut self, _target: &Pose, _speed: f64) -> RobotResult<()> {
-        unimplemented!()
+    fn move_cartesian_rel_async(&mut self, target: &Pose, speed: f64) -> RobotResult<()> {
+        if self.is_moving {
+            return Err(RobotException::CommandException(
+                "Robot is moving".to_string(),
+            ));
+        }
+        self.is_moving = true;
+
+        let speed = speed * JAKA_ROBOT_MAX_CARTESIAN_VEL;
+
+        let (tran, rot) = target.euler();
+        let move_data = MoveLData {
+            cart_position: combine_array(&tran, &rot),
+            speed,
+            accel: 1.0,
+            relflag: 0,
+        };
+        self._move_l(move_data)?;
+
+        self.is_moving = false;
+        Ok(())
     }
 }
 
