@@ -485,6 +485,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f4c7245a08504955605670dbf141fceab975f15ca21570696aebe9d2e71576bd"
 
 [[package]]
+name = "inventory"
+version = "0.3.20"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ab08d7cd2c5897f2c949e5383ea7c7db03fb19130ffcfbf7eda795137ae3cb83"
+dependencies = [
+ "rustversion",
+]
+
+[[package]]
 name = "itoa"
 version = "1.0.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -524,6 +533,7 @@ version = "0.1.2"
 dependencies = [
  "bincode",
  "nalgebra",
+ "paste",
  "pyo3",
  "robot_behavior",
  "serde",
@@ -807,6 +817,7 @@ checksum = "17da310086b068fbdcefbba30aeb3721d5bb9af8db4987d6735b2183ca567229"
 dependencies = [
  "cfg-if",
  "indoc",
+ "inventory",
  "libc",
  "memoffset",
  "once_cell",
@@ -890,13 +901,15 @@ dependencies = [
 
 [[package]]
 name = "robot_behavior"
-version = "0.3.5"
+version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "75f929f56b8e16ebad5478fb4d6d1a76840957afa52bf47117a81e5502846676"
+checksum = "71d5b4d49ee679dc37e4880e6937cbfc64c69f685842a22132c2d7565d57630e"
 dependencies = [
  "libc",
  "nalgebra",
+ "paste",
  "plotters",
+ "pyo3",
  "serde",
  "serde_json",
  "serde_with",

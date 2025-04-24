@@ -1,0 +1,6 @@
+from robot_behavior import Arm, ArmPreplannedMotion, ArmPreplannedMotionExt
+
+class JakaRobot(Arm, ArmPreplannedMotion, ArmPreplannedMotionExt):
+    def __init__(ip: str):
+        ...
+    ...
