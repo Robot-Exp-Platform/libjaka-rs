@@ -3,10 +3,11 @@ use crate::{
     network::NetWork, types::*,
 };
 use robot_behavior::{
-    ArmBehavior, ArmPreplannedMotion, ArmPreplannedMotionExt, ArmState, ControlType, LoadState,
-    MotionType, Pose, RobotBehavior, RobotException, RobotResult, utils::combine_array,
+    ArmBehavior, ArmPreplannedMotion, ArmPreplannedMotionExt, ArmState, ArmStreamingHandle,
+    ArmStreamingMotion, ControlType, LoadState, MotionType, Pose, RobotBehavior, RobotException,
+    RobotResult, utils::combine_array,
 };
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex, RwLock};
 
 /// # Jaja Robot (节卡机器人)
 pub struct JakaRobot {
@@ -136,13 +137,13 @@ impl RobotBehavior for JakaRobot {
         unimplemented!()
     }
     fn stop(&mut self) -> RobotResult<()> {
-        unimplemented!()
+        self._stop_program()?.into()
     }
     fn emergency_stop(&mut self) -> RobotResult<()> {
         unimplemented!()
     }
     fn clear_emergency_stop(&mut self) -> RobotResult<()> {
-        unimplemented!()
+        self._clear_error()?.into()
     }
     fn read_state(&mut self) -> RobotResult<Self::State> {
         let state = self.robot_state.read().unwrap();
@@ -154,8 +155,12 @@ impl ArmBehavior<JAKA_DOF> for JakaRobot {
     fn state(&mut self) -> RobotResult<ArmState<JAKA_DOF>> {
         unimplemented!()
     }
-    fn set_load(&mut self, _load: LoadState) -> RobotResult<()> {
-        unimplemented!()
+    fn set_load(&mut self, load: LoadState) -> RobotResult<()> {
+        let set_load_data = SetPayloadData {
+            mass: load.m,
+            centroid: load.x,
+        };
+        self._set_payload(set_load_data)?.into()
     }
 }
 
@@ -168,8 +173,13 @@ impl ArmPreplannedMotion<JAKA_DOF> for JakaRobot {
         };
         Ok(())
     }
-    fn move_to_async(&mut self, _target: MotionType<JAKA_DOF>, _speed: f64) -> RobotResult<()> {
-        unimplemented!()
+    fn move_to_async(&mut self, target: MotionType<JAKA_DOF>, speed: f64) -> RobotResult<()> {
+        match target {
+            MotionType::Joint(joint) => self.move_joint_async(&joint, speed)?,
+            MotionType::Cartesian(pose) => self.move_cartesian_async(&pose, speed)?,
+            _ => unimplemented!(),
+        };
+        Ok(())
     }
     fn move_rel(&mut self, rel: MotionType<JAKA_DOF>, speed: f64) -> RobotResult<()> {
         match rel {
@@ -178,8 +188,13 @@ impl ArmPreplannedMotion<JAKA_DOF> for JakaRobot {
         };
         Ok(())
     }
-    fn move_rel_async(&mut self, _rel: MotionType<JAKA_DOF>, _speed: f64) -> RobotResult<()> {
-        unimplemented!()
+    fn move_rel_async(&mut self, rel: MotionType<JAKA_DOF>, speed: f64) -> RobotResult<()> {
+        match rel {
+            MotionType::Joint(joint) => self.move_joint_rel_async(&joint, speed)?,
+            MotionType::Cartesian(pose) => self.move_cartesian_rel_async(&pose, speed)?,
+            _ => unimplemented!(),
+        };
+        Ok(())
     }
     fn move_path(&mut self, _path: Vec<MotionType<JAKA_DOF>>, _speed: f64) -> RobotResult<()> {
         unimplemented!()
@@ -299,7 +314,42 @@ impl ArmPreplannedMotionExt<JAKA_DOF> for JakaRobot {
     }
 }
 
-// impl ArmStreamingMotion for JakaRobot {}
+pub struct JakaRobotHandle {}
+
+impl ArmStreamingHandle<JAKA_DOF> for JakaRobotHandle {
+    fn move_to(&mut self, _target: MotionType<JAKA_DOF>) -> RobotResult<()> {
+        unimplemented!()
+    }
+    fn last_motion(&self) -> RobotResult<MotionType<JAKA_DOF>> {
+        unimplemented!()
+    }
+
+    fn control_with(&mut self, _control: ControlType<JAKA_DOF>) -> RobotResult<()> {
+        unimplemented!()
+    }
+    fn last_control(&self) -> RobotResult<ControlType<JAKA_DOF>> {
+        unimplemented!()
+    }
+}
+
+impl ArmStreamingMotion<JAKA_DOF> for JakaRobot {
+    type Handle = JakaRobotHandle;
+    fn start_streaming(&mut self) -> RobotResult<Self::Handle> {
+        unimplemented!()
+    }
+
+    fn end_streaming(&mut self) -> RobotResult<()> {
+        unimplemented!()
+    }
+
+    fn move_to_target(&mut self) -> Arc<Mutex<Option<MotionType<JAKA_DOF>>>> {
+        unimplemented!()
+    }
+
+    fn control_with_target(&mut self) -> Arc<Mutex<Option<ControlType<JAKA_DOF>>>> {
+        unimplemented!()
+    }
+}
 
 // impl ArmStreamingMotionExt for JakaRobot {}
 
