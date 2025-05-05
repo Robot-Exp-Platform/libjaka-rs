@@ -520,7 +520,7 @@ checksum = "c19937216e9d3aa9956d9bb8dfc0b0c8beb6058fc4f7a4dc4d850edf86a237d6"
 
 [[package]]
 name = "libjaka-rs"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "bincode",
  "nalgebra",
@@ -890,12 +890,13 @@ dependencies = [
 
 [[package]]
 name = "robot_behavior"
-version = "0.3.5"
+version = "0.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "75f929f56b8e16ebad5478fb4d6d1a76840957afa52bf47117a81e5502846676"
+checksum = "0c58490ec5ae3860508cee1d7371921a8e91295de0f925feb795094dcc8a307e"
 dependencies = [
  "libc",
  "nalgebra",
+ "paste",
  "plotters",
  "serde",
  "serde_json",

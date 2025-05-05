@@ -1,12 +1,17 @@
 use crate::{
-    JAKA_DOF, JAKA_ROBOT_MAX_CARTESIAN_VEL, JAKA_ROBOT_MAX_JOINT_VEL, JAKA_VERSION,
+    JAKA_DOF, JAKA_FREQUENCY, JAKA_ROBOT_MAX_CARTESIAN_VEL, JAKA_ROBOT_MAX_JOINT_VEL, JAKA_VERSION,
     network::NetWork, types::*,
 };
 use robot_behavior::{
-    ArmBehavior, ArmPreplannedMotion, ArmPreplannedMotionExt, ArmState, ControlType, LoadState,
-    MotionType, Pose, RobotBehavior, RobotException, RobotResult, utils::combine_array,
+    ArmBehavior, ArmPreplannedMotion, ArmPreplannedMotionExt, ArmRealtimeControl,
+    ArmRealtimeControlExt, ArmState, ArmStreamingHandle, ArmStreamingMotion, ControlType,
+    LoadState, MotionType, Pose, RobotBehavior, RobotException, RobotResult, utils::combine_array,
 };
-use std::sync::{Arc, RwLock};
+use std::{
+    sync::{Arc, Mutex, RwLock},
+    thread::sleep,
+    time::Duration,
+};
 
 /// # Jaja Robot (节卡机器人)
 pub struct JakaRobot {
@@ -152,7 +157,24 @@ impl RobotBehavior for JakaRobot {
 
 impl ArmBehavior<JAKA_DOF> for JakaRobot {
     fn state(&mut self) -> RobotResult<ArmState<JAKA_DOF>> {
-        unimplemented!()
+        let data = self._get_data()?;
+        let joint: [f64; JAKA_DOF] = data.joint_actual_position[..6].try_into().unwrap();
+        let pose_o_to_ee = Pose::Euler(
+            data.actual_position[0..3].try_into().unwrap(),
+            data.actual_position[3..6].try_into().unwrap(),
+        );
+        let arm_state = ArmState {
+            joint: Some(joint),
+            joint_vel: None,
+            joint_acc: None,
+            pose_o_to_ee: Some(pose_o_to_ee),
+            pose_ee_to_k: None,
+            pose_f_to_ee: None,
+            cartesian_vel: None,
+            load: None,
+            tau: None,
+        };
+        Ok(arm_state)
     }
     fn set_load(&mut self, _load: LoadState) -> RobotResult<()> {
         unimplemented!()
@@ -299,10 +321,117 @@ impl ArmPreplannedMotionExt<JAKA_DOF> for JakaRobot {
     }
 }
 
-// impl ArmStreamingMotion for JakaRobot {}
+pub struct JakaStreamingHandle {
+    motion: Arc<Mutex<Option<MotionType<JAKA_DOF>>>>,
+}
+
+impl ArmStreamingHandle<JAKA_DOF> for JakaStreamingHandle {
+    fn move_to(&mut self, target: MotionType<JAKA_DOF>) -> RobotResult<()> {
+        *self.motion.lock().unwrap() = Some(target);
+        Ok(())
+    }
+    fn last_motion(&self) -> RobotResult<MotionType<JAKA_DOF>> {
+        unimplemented!()
+    }
+    fn control_with(&mut self, _control: ControlType<JAKA_DOF>) -> RobotResult<()> {
+        unimplemented!()
+    }
+    fn last_control(&self) -> RobotResult<ControlType<JAKA_DOF>> {
+        unimplemented!()
+    }
+}
+
+impl ArmStreamingMotion<JAKA_DOF> for JakaRobot {
+    type Handle = JakaStreamingHandle;
+
+    fn start_streaming(&mut self) -> RobotResult<Self::Handle> {
+        self._servo_move(ServoMoveData { relflag: 1 })?;
+
+        Ok(JakaStreamingHandle {
+            motion: Arc::new(Mutex::new(None)),
+        })
+    }
+
+    fn end_streaming(&mut self) -> RobotResult<()> {
+        self._servo_move(ServoMoveData { relflag: 0 })?;
+        Ok(())
+    }
+
+    fn move_to_target(&mut self) -> Arc<Mutex<Option<MotionType<JAKA_DOF>>>> {
+        unimplemented!()
+    }
+
+    fn control_with_target(&mut self) -> Arc<Mutex<Option<ControlType<JAKA_DOF>>>> {
+        unimplemented!()
+    }
+}
 
 // impl ArmStreamingMotionExt for JakaRobot {}
 
-// impl ArmRealtimeControl for JakaRobot {}
+impl ArmRealtimeControl<JAKA_DOF> for JakaRobot {
+    fn move_with_closure<FM>(&mut self, mut closure: FM) -> RobotResult<()>
+    where
+        FM: FnMut(ArmState<JAKA_DOF>, std::time::Duration) -> (MotionType<JAKA_DOF>, bool)
+            + Send
+            + 'static,
+    {
+        if self.is_moving {
+            return Err(RobotException::CommandException(
+                "Robot is moving".to_string(),
+            ));
+        }
+        self.is_moving = true;
+        self._servo_move(ServoMoveData { relflag: 1 })?;
 
-// impl ArmRealtimeControlExt for JakaRobot {}
+        loop {
+            let start_time = std::time::Instant::now();
+            let state = self.state()?;
+
+            let (motion, finished) =
+                closure(state.clone(), Duration::from_secs_f64(1. / JAKA_FREQUENCY));
+
+            if finished {
+                break;
+            }
+
+            match motion {
+                MotionType::Joint(joint) => {
+                    let data = ServoJData {
+                        joint_angles: joint,
+                        relflag: 0,
+                    };
+                    self._servo_j(data)?;
+                }
+                MotionType::Cartesian(pose) => {
+                    let (tran, rot) = pose.euler();
+                    let data = ServoPData {
+                        cat_position: combine_array(&tran, &rot),
+                        relflag: 0,
+                    };
+                    self._servo_p(data)?;
+                }
+                _ => {
+                    return Err(RobotException::CommandException(
+                        "Invalid motion type".to_string(),
+                    ));
+                }
+            }
+
+            sleep(Duration::from_secs_f64(1. / JAKA_FREQUENCY) - start_time.elapsed());
+        }
+
+        self._servo_move(ServoMoveData { relflag: 1 })?;
+        self.is_moving = false;
+        Ok(())
+    }
+    fn control_with_closure<FC>(&mut self, mut _closure: FC) -> RobotResult<()>
+    where
+        FC: FnMut(ArmState<JAKA_DOF>, std::time::Duration) -> (ControlType<JAKA_DOF>, bool)
+            + Send
+            + 'static,
+    {
+        unimplemented!()
+    }
+}
+
+impl ArmRealtimeControlExt<JAKA_DOF> for JakaRobot {}
