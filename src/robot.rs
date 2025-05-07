@@ -9,7 +9,7 @@ use robot_behavior::{
 };
 use std::{
     sync::{Arc, Mutex, RwLock},
-    thread::sleep,
+    // thread::sleep,
     time::Duration,
 };
 
@@ -398,8 +398,11 @@ impl ArmRealtimeControl<JAKA_DOF> for JakaRobot {
         self._servo_move(ServoMoveData { relflag: 1 })?;
 
         loop {
-            let start_time = std::time::Instant::now();
-            let state = self.state()?;
+            // let start_time = std::time::Instant::now();
+            // let state = self.state()?;
+            let state = ArmState::<6>::default();
+
+            // println!("get state spend time: {:?}", start_time.elapsed());
 
             let (motion, finished) =
                 closure(state.clone(), Duration::from_secs_f64(1. / JAKA_FREQUENCY));
@@ -407,6 +410,8 @@ impl ArmRealtimeControl<JAKA_DOF> for JakaRobot {
             if finished {
                 break;
             }
+
+            // println!("get motion spend time: {:?}", start_time.elapsed());
 
             match motion {
                 MotionType::Joint(joint) => {
@@ -431,10 +436,10 @@ impl ArmRealtimeControl<JAKA_DOF> for JakaRobot {
                 }
             }
 
-            sleep(Duration::from_secs_f64(1. / JAKA_FREQUENCY) - start_time.elapsed());
+            // println!("send motion spend time: {:?}", start_time.elapsed());
         }
 
-        self._servo_move(ServoMoveData { relflag: 1 })?;
+        self._servo_move(ServoMoveData { relflag: 0 })?;
         self.is_moving = false;
         Ok(())
     }
