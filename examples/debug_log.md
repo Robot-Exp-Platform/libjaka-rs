@@ -98,3 +98,4 @@ sleep(Duration::from_secs_f64(1. / JAKA_FREQUENCY));
 //robot.rs
  let state = ArmState::<6>::default();
 ```
+每次循环约为8ms，删去循环中的sleep
