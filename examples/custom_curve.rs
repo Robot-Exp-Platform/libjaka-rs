@@ -9,7 +9,7 @@ fn main() -> RobotResult<()> {
     robot.enable()?;
 
     // 根据预设参数做曲线规划
-    let (d, curve) = cone_spiral_curve([0.0, 0.0, 0.0], 100.0, 10, 1.0, 1.0);
+    let (d, curve) = cone_spiral_curve([300.0, 0.0, 30.0], 60.0, 3, 0.3, 0.3);
 
     // // 使用关节速度上限做时间规划，需要确保 d 是关节空间内的总距离 ，最小时间为 t_min，可以给速度和加速度乘个系数让他们慢点儿
     // let (t_min, f_t) = simple_4th_curve(
@@ -19,7 +19,7 @@ fn main() -> RobotResult<()> {
     // );
 
     // 使用笛卡尔速度上限做时间规划，需要确保 d 是笛卡尔空间内的总距离 ，最小时间为 t_min , 我不知道笛卡尔空间加速度是多少，先给了个 1.0 试试水
-    let (t_min, f_t) = simple_4th_curve(1., JAKA_ROBOT_MAX_CARTESIAN_VEL / d, 1. / d);
+    let (t_min, f_t) = simple_4th_curve(1., 5. / d, 3. / d);
     let mut t = Duration::from_secs(0);
     let t_min = Duration::from_secs_f64(t_min);
     let closure = move |_, period| {
@@ -51,12 +51,8 @@ fn cone_spiral_curve(
     } else {
         let sqrt_k = k.sqrt();
         let sqrt_1_plus_k = (1.0 + k).sqrt();
-        h / theta.cos() * (
-            0.5 * sqrt_1_plus_k + 
-            0.5 / sqrt_k * (sqrt_k + sqrt_1_plus_k).ln()
-        )
+        h / theta.cos() * (0.5 * sqrt_1_plus_k + 0.5 / sqrt_k * (sqrt_k + sqrt_1_plus_k).ln())
     };
-
 
     let closure = Arc::new(move |s: f64| {
         let t = s.clamp(0.0, 1.0);
@@ -103,9 +99,22 @@ fn compute_point(
         na::Rotation3::from_matrix_unchecked(na::Matrix3::from_columns(&[x_dir, y_dir, z_tool]));
 
     // 欧拉角转换 这里获得的是弧度
-    let euler = rot.euler_angles();
+    // let euler = rot.euler_angles();
+    // let euler_deg = euler.map(|r| r.to_degrees()); // 转换为角度制
 
-    MotionType::Cartesian(Pose::Euler([x, y, z], euler.into()))
+    // MotionType::Cartesian(Pose::Euler([x, y, z], euler_deg.into())) // 使用角度制发送
+    let (roll, pitch, yaw) = rot.euler_angles();
+    let euler_deg = (roll.to_degrees(), pitch.to_degrees(), yaw.to_degrees());
+    println!(
+        "{},{},{},{},{},{}",
+        x,
+        y,
+        z,
+        roll.to_degrees(),
+        pitch.to_degrees(),
+        yaw.to_degrees()
+    );
+    MotionType::Cartesian(Pose::Euler([x, y, z], euler_deg.into()))
 }
 
 // 这个函数用于生成四阶平滑曲线，在变量分离后作为时间函数使用
