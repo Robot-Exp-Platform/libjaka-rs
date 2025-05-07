@@ -41,30 +41,27 @@ fn cone_spiral_curve(
     alpha: f64,
 ) -> (f64, Arc<dyn Fn(f64) -> MotionType<JAKA_DOF> + Send + Sync>) {
     let r_base = h * theta.tan();
+    let n = loops as f64;
+    let sin_theta = theta.sin();
 
-    // 数值积分法计算总长度。这样不好！这个问题是有解析表达的！
-    let total_length = (0..1000) // 数值积分计算总长度
-        .fold((0.0, [0.0; 3]), |(len, prev), i| {
-            let t = i as f64 / 999.0;
-            let current = compute_point(t, vertex, h, loops, r_base, alpha);
-            let current = if let MotionType::Cartesian(Pose::Euler(posi, _)) = current {
-                posi
-            } else {
-                [0.0; 3]
-            };
+    // 解析计算总长度
+    let k = 4.0 * PI.powi(2) * n.powi(2) * sin_theta.powi(2);
+    let total_length = if k < 1e-6 {
+        h / theta.cos() // 直线情况
+    } else {
+        let sqrt_k = k.sqrt();
+        let sqrt_1_plus_k = (1.0 + k).sqrt();
+        h / theta.cos() * (
+            0.5 * sqrt_1_plus_k + 
+            0.5 / sqrt_k * (sqrt_k + sqrt_1_plus_k).ln()
+        )
+    };
 
-            let delta = ((current[0] - prev[0]).powi(2)
-                + (current[1] - prev[1]).powi(2)
-                + (current[2] - prev[2]).powi(2))
-            .sqrt();
-
-            (len + delta, current)
-        })
-        .0;
 
     let closure = Arc::new(move |s: f64| {
         let t = s.clamp(0.0, 1.0);
-        compute_point(t, vertex, h, loops, r_base, alpha)
+        let x = t.sqrt(); // 反解x = sqrt(t)
+        compute_point(x, vertex, h, loops, r_base, alpha)
     });
 
     (total_length, closure)
