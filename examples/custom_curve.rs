@@ -1,13 +1,21 @@
 use nalgebra as na;
 use std::{f64::consts::PI, sync::Arc, time::Duration};
 
-use libjaka_rs::{JAKA_DOF, JAKA_ROBOT_MAX_CARTESIAN_VEL, JakaRobot};
-use robot_behavior::{ArmRealtimeControl, MotionType, Pose, RobotBehavior, RobotResult};
+use libjaka_rs::{JAKA_DOF, JakaRobot};
+use robot_behavior::{
+    ArmPreplannedMotionExt, ArmRealtimeControl, MotionType, Pose, RobotBehavior, RobotResult,
+};
+use std::thread::sleep;
 
 fn main() -> RobotResult<()> {
     let mut robot = JakaRobot::new("10.5.5.100");
     robot.enable()?;
 
+    robot.move_cartesian_async(
+        &Pose::Euler([300.0, 0.0, 30.0], [-180.0, 0.0, 180.0]),
+        100.0,
+    )?;
+    sleep(Duration::from_secs(2));
     // 根据预设参数做曲线规划
     let (d, curve) = cone_spiral_curve([300.0, 0.0, 30.0], 60.0, 3, 0.3, 0.3);
 
