@@ -109,7 +109,7 @@ impl StateSerde for bool {
             "0" => false,
             "1" => true,
             _ => {
-                print!("Invalid bool value: {}", s);
+                print!("Invalid bool value: {s}");
                 false
             }
         }
@@ -143,7 +143,7 @@ where
             .map(|x| x.state_to_string())
             .collect::<Vec<String>>()
             .join(",");
-        format!("({})", data)
+        format!("({data})")
     }
 }
 

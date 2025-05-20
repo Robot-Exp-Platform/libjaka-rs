@@ -16,7 +16,7 @@ pub struct NetWork {
 
 impl NetWork {
     pub fn new(ip: &str) -> NetWork {
-        let tcp_cmd = Some(TcpStream::connect(format!("{}:{}", ip, PORT_CMD)).unwrap());
+        let tcp_cmd = Some(TcpStream::connect(format!("{ip}:{PORT_CMD}")).unwrap());
         NetWork { tcp_cmd }
     }
 
@@ -25,7 +25,7 @@ impl NetWork {
         S: Default + StateSerde + Send + Sync + 'static,
     {
         let state = Arc::new(RwLock::new(S::default()));
-        let state_clone = Arc::clone(&state);
+        
         // let ip_owned = ip.to_string();
         // thread::spawn(move || {
         //     let mut tcp_state = TcpStream::connect(format!("{}:{}", ip_owned, PORT_STATE)).unwrap();
@@ -47,7 +47,7 @@ impl NetWork {
         //         *write_guard = data;
         //     }
         // });
-        state_clone
+        Arc::clone(&state)
     }
 
     pub fn send_and_recv<D, S>(&mut self, data: D) -> RobotResult<S>

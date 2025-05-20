@@ -141,7 +141,7 @@ impl RobotBehavior for JakaRobot {
         self._disable()?.into()
     }
     fn is_moving(&mut self) -> bool {
-        if self.is_moving == true {
+        if self.is_moving {
             self.is_moving = self._get_data().unwrap().curr_tcp_trans_vel > 0.1;
         }
         self.is_moving
