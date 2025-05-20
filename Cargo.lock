@@ -714,6 +714,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "pipe-trait"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c1be1ec9e59f0360aefe84efa6f699198b685ab0d5718081e9f72aa2344289e2"
+
+[[package]]
 name = "pkg-config"
 version = "0.3.32"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -890,13 +896,12 @@ dependencies = [
 
 [[package]]
 name = "robot_behavior"
-version = "0.3.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0c58490ec5ae3860508cee1d7371921a8e91295de0f925feb795094dcc8a307e"
+version = "0.4.0"
 dependencies = [
  "libc",
  "nalgebra",
  "paste",
+ "pipe-trait",
  "plotters",
  "serde",
  "serde_json",

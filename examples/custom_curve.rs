@@ -3,7 +3,8 @@ use std::{f64::consts::PI, sync::Arc, time::Duration};
 
 use libjaka_rs::{JAKA_DOF, JakaRobot};
 use robot_behavior::{
-    ArmPreplannedMotionExt, ArmRealtimeControl, MotionType, Pose, RobotBehavior, RobotResult,
+    ArmBehavior, ArmPreplannedMotionImpl, ArmRealtimeControl, MotionType, Pose, RobotBehavior,
+    RobotResult,
 };
 use std::thread::sleep;
 
@@ -11,21 +12,12 @@ fn main() -> RobotResult<()> {
     let mut robot = JakaRobot::new("10.5.5.100");
     robot.enable()?;
 
-    robot.move_cartesian_async(
-        // &Pose::Euler([-300.0, 0.0, 90.0], [180.0, 0.0, 180.0]),
-        &Pose::Euler([300.0, 0.0, 30.0], [-180.0, 0.0, 180.0]),
-        100.0,
-    )?;
+    robot
+        .with_cartesian_velocity(100.0)
+        .move_cartesian_async(&Pose::Euler([300.0, 0.0, 30.0], [-180.0, 0.0, 180.0]))?;
     sleep(Duration::from_secs(2));
     // 根据预设参数做曲线规划
     let (d, curve) = cone_spiral_curve([300.0, 0.0, 30.0], 60.0, 3, 0.3, 0.3);
-
-    // // 使用关节速度上限做时间规划，需要确保 d 是关节空间内的总距离 ，最小时间为 t_min，可以给速度和加速度乘个系数让他们慢点儿
-    // let (t_min, f_t) = simple_4th_curve(
-    //     1.,
-    //     JAKA_ROBOT_MAX_JOINT_VEL[0] / d,
-    //     JAKA_ROBOT_MAX_JOINT_ACC[0] / d,
-    // );
 
     // 使用笛卡尔速度上限做时间规划，需要确保 d 是笛卡尔空间内的总距离 ，最小时间为 t_min , 我不知道笛卡尔空间加速度是多少，先给了个 1.0 试试水
     let (t_min, f_t) = simple_4th_curve(1., 10. / d, 8. / d);
