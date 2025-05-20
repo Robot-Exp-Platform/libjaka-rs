@@ -1,6 +1,6 @@
 [package]
-name = "libjaka"
-version = "0.1.2"
+name = "libjaka-rs"
+version = "0.1.3"
 edition = "2024"
 authors = ["Yixing <yanjizhou312@163.com>"]
 readme = "README.md"
@@ -25,11 +25,12 @@ serde_repr = "0.1"
 serde_with = "3.12"
 nalgebra = "0.33"
 bincode = "1.3"
-robot_behavior = "0.3.6"
-paste = "1.0"
+robot_behavior = { version = "0.4.0", path = "crates/robot_behavior", features = [
+    "to_py",
+] }
 
 [features]
-default = ["to_py"]
+default = []
 debug = []
 ffi = []
 to_py = ["pyo3", "ffi", "robot_behavior/to_py"]

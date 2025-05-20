@@ -261,23 +261,77 @@ pub struct ServoPData {
 // get data
 pub type GetDataRequest = Request<{ Command::GetData }, ()>;
 pub type GetDataResponse = Response<{ Command::GetData }, GetDataState>;
+
+#[serde_as]
 #[derive(Serialize, Deserialize)]
 pub struct GetDataState {
+    pub len: u16,
+    pub joint_actual_position: [f64; 6],
+    pub drag_status: bool,
+    pub actual_position: [f64; 6],
+    #[serde_as(as = "[_; 199]")]
+    pub din: [u8; 199],
+    #[serde_as(as = "[_; 199]")]
+    pub dout: [u8; 199],
+    #[serde_as(as = "[_; 128]")]
+    pub ain: [f64; 128],
+    #[serde_as(as = "[_; 128]")]
+    pub aout: [f64; 128],
+    pub tio_din: [u8; 8],
+    #[serde_as(as = "[_; 8]")]
+    pub tio_dout: [u8; 8],
+    #[serde_as(as = "[_; 2]")]
+    pub tio_ain: [f64; 2],
+    #[serde_as(as = "[_; 2]")]
+    pub relay_io: [u8; 2],
+    #[serde_as(as = "[_; 128]")]
+    pub mb_slave_din: [u8; 128],
+    #[serde_as(as = "[_; 128]")]
+    pub mb_slave_dout: [u8; 128],
+    #[serde_as(as = "[_; 64]")]
+    pub mb_slave_ain: [f64; 64],
+    #[serde_as(as = "[_; 64]")]
+    pub mb_slave_aout: [f64; 64],
+    #[serde_as(as = "[_; 64]")]
+    pub pn_dev_din: [u8; 64],
+    #[serde_as(as = "[_; 64]")]
+    pub pn_dev_dout: [u8; 64],
+    #[serde_as(as = "[_; 64]")]
+    pub pn_dev_ain: [f64; 64],
+    #[serde_as(as = "[_; 64]")]
+    pub pn_dev_aout: [f64; 64],
+    #[serde_as(as = "[_; 64]")]
+    pub eip_adpt_din: [u8; 64],
+    #[serde_as(as = "[_; 64]")]
+    pub eip_adpt_dout: [u8; 64],
+    #[serde_as(as = "[_; 48]")]
+    pub eip_adpt_ain: [f64; 48],
+    #[serde_as(as = "[_; 48]")]
+    pub eip_adpt_aout: [f64; 48],
+    pub task_state: u8,
+    pub homed: [u8; 9],
+    pub task_mode: u8,
+    pub interp_state: u8,
+    pub enabled: bool,
+    pub paused: bool,
+    pub rapidrate: f64,
+    pub current_tool_id: u8,
+    pub current_user_id: u8,
+    pub protective_stop: u8,
+    pub on_soft_limit: u8,
+    pub emergency_stop: u8,
+    pub drag_near_limit: [u8; 6],
+    pub powered_on: u8,
+    pub inpos: bool,
+    pub executing_line: u8,
+    pub curr_tcp_trans_vel: f64,
+
+    // #[serde(rename = "cmdName")]
+    // pub cmd_name: String,
     #[serde(rename = "errorCode")]
     pub error_code: String,
     #[serde(rename = "errorMsg")]
     pub error_msg: String,
-    pub tio_dout: [u8; 8],
-    pub tool_position: [f64; 9],
-    pub paused: u8,
-    pub cmd_name: String,
-    pub estop: u8,
-    pub current_tool_id: u8,
-    pub tio_ain: [u8; 2],
-    pub actual_position: [f64; 9],
-    pub joint_actual_position: [f64; 9],
-    pub rapidrate: f64,
-    pub enabled: u8,
 }
 
 // rapid rate

@@ -21,3 +21,14 @@ py_robot_behavior!(PyJakaRobot(JakaRobot));
 py_arm_behavior!(PyJakaRobot<{6}>(JakaRobot));
 py_arm_preplanned_motion!(PyJakaRobot<{6}>(JakaRobot));
 py_arm_preplanned_motion_ext!(PyJakaRobot<{6}>(JakaRobot));
+py_arm_real_time_control!(PyTestRobot<{0}>(TestRobot));
+py_arm_real_time_control_ext!(PyTestRobot<{0}>(TestRobot));
+
+#[pyo3::pymodule]
+fn ex_robot(m: &pyo3::Bound<'_, PyModule>) -> pyo3::PyResult<()> {
+    m.add_class::<PyJakaRobot>()?;
+    m.add_class::<PyPose>()?;
+    m.add_class::<PyArmState>()?;
+    m.add_class::<LoadState>()?;
+    Ok(())
+}
