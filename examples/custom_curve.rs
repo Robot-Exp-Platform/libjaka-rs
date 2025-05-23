@@ -12,26 +12,26 @@ fn main() -> RobotResult<()> {
     robot.enable()?;
 
     // ================== 新增工具坐标系定义 ==================
-    let tool_offset = na::Vector3::new(107.0, 0.0, 30.0); 
+    let tool_offset = na::Vector3::new(107.0, 0.0, 30.0);
 
     // 初始移动（目标位置为工具末端的位置）
-    let tool_target_pos = [410.0, 0.0, 30.0];
+    let tool_target_pos = [250.0, 0.0, 50.0];
     let tool_target_rot = [-180.0, 0.0, 180.0];
-    
+
     // 转换为法兰坐标系目标
     let flange_target = compute_flange_pose(&tool_target_pos, &tool_target_rot, &tool_offset);
     robot.move_cartesian_async(&flange_target, 100.0)?;
-    
+
     sleep(Duration::from_secs(2));
-    
+
     // ================== 曲线规划 ==================
     let (d, curve) = cone_spiral_curve(
         tool_target_pos, // 传入的是工具目标位置
-        60.0, 
-        3, 
-        0.3, 
-        0.3,
-        &tool_offset     // 传入工具偏移量
+        60.0,
+        3,
+        0.1,
+        0.1,
+        &tool_offset, // 传入工具偏移量
     );
 
     let (t_min, f_t) = simple_4th_curve(1., 10. / d, 8. / d);
@@ -62,13 +62,13 @@ fn compute_flange_pose(
     let flange_pos = na::Vector3::new(tool_pos[0], tool_pos[1], tool_pos[2]) - rot * tool_offset;
     Pose::Euler(
         [flange_pos.x, flange_pos.y, flange_pos.z],
-        *tool_rot // 工具无旋转时，法兰姿态=工具姿态
+        *tool_rot, // 工具无旋转时，法兰姿态=工具姿态
     )
 }
 
 // ================== 曲线生成函数 ==================
 fn cone_spiral_curve(
-    vertex: [f64; 3],   // 工具坐标系下的顶点位置
+    vertex: [f64; 3], // 工具坐标系下的顶点位置
     h: f64,
     loops: usize,
     theta: f64,
@@ -93,25 +93,22 @@ fn cone_spiral_curve(
     let closure = Arc::new(move |s: f64| {
         let t = s.clamp(0.0, 1.0);
         let x = t.sqrt(); // 反解x = sqrt(t)
-        
+
         // 1. 计算工具坐标系下的目标位姿
         let tool_motion = compute_point(x, vertex, h, loops, r_base, alpha);
-        
+
         // 2. 转换为法兰坐标系位姿
         if let MotionType::Cartesian(Pose::Euler(pos, rot)) = tool_motion {
             // 法兰位置 = 工具位置 - 旋转后的工具偏移量
-            let flange_pos = na::Vector3::new(pos[0], pos[1], pos[2]) 
+            let flange_pos = na::Vector3::new(pos[0], pos[1], pos[2])
                 - na::Rotation3::from_euler_angles(
                     rot[0].to_radians(),
                     rot[1].to_radians(),
                     rot[2].to_radians(),
                 ) * tool_offset;
-            
+
             // 保持姿态不变（工具无旋转时）
-            MotionType::Cartesian(Pose::Euler(
-                [flange_pos.x, flange_pos.y, flange_pos.z],
-                rot
-            ))
+            MotionType::Cartesian(Pose::Euler([flange_pos.x, flange_pos.y, flange_pos.z], rot))
         } else {
             tool_motion
         }
@@ -119,7 +116,6 @@ fn cone_spiral_curve(
 
     (total_length, closure)
 }
-
 
 // gpt 写的函数，计算当前点的坐标和姿态
 fn compute_point(

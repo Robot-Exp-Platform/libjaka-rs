@@ -300,7 +300,7 @@ impl ArmPreplannedMotionExt<JAKA_DOF> for JakaRobot {
         let move_data = MoveLData {
             cart_position: combine_array(&tran, &rot),
             speed,
-            accel: 1.0,
+            accel: 50.0,
             relflag: 0,
         };
         self._move_l(move_data)?;

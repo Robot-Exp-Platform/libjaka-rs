@@ -119,6 +119,6 @@ def set_equal_axes(ax, xyz):
 
 
 if __name__ == "__main__":
-    file_path = "scripts/output_spiral"  # 替换为实际路径
+    file_path = "scripts/output666"  # 替换为实际路径
     xyz, _ = load_trajectory(file_path)
     plot_speed_colored_trajectory(xyz, point_step=10)  # 每10个点显示一个
