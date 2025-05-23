@@ -11,23 +11,29 @@ fn main() -> RobotResult<()> {
     let mut robot = JakaRobot::new("10.5.5.100");
     robot.enable()?;
 
-    robot.move_cartesian_async(
-        // &Pose::Euler([-300.0, 0.0, 90.0], [180.0, 0.0, 180.0]),
-        &Pose::Euler([300.0, 0.0, 30.0], [-180.0, 0.0, 180.0]),
-        100.0,
-    )?;
+    // ================== 新增工具坐标系定义 ==================
+    let tool_offset = na::Vector3::new(107.0, 0.0, 30.0); 
+
+    // 初始移动（目标位置为工具末端的位置）
+    let tool_target_pos = [410.0, 0.0, 30.0];
+    let tool_target_rot = [-180.0, 0.0, 180.0];
+    
+    // 转换为法兰坐标系目标
+    let flange_target = compute_flange_pose(&tool_target_pos, &tool_target_rot, &tool_offset);
+    robot.move_cartesian_async(&flange_target, 100.0)?;
+    
     sleep(Duration::from_secs(2));
-    // 根据预设参数做曲线规划
-    let (d, curve) = cone_spiral_curve([300.0, 0.0, 30.0], 60.0, 3, 0.3, 0.3);
+    
+    // ================== 曲线规划 ==================
+    let (d, curve) = cone_spiral_curve(
+        tool_target_pos, // 传入的是工具目标位置
+        60.0, 
+        3, 
+        0.3, 
+        0.3,
+        &tool_offset     // 传入工具偏移量
+    );
 
-    // // 使用关节速度上限做时间规划，需要确保 d 是关节空间内的总距离 ，最小时间为 t_min，可以给速度和加速度乘个系数让他们慢点儿
-    // let (t_min, f_t) = simple_4th_curve(
-    //     1.,
-    //     JAKA_ROBOT_MAX_JOINT_VEL[0] / d,
-    //     JAKA_ROBOT_MAX_JOINT_ACC[0] / d,
-    // );
-
-    // 使用笛卡尔速度上限做时间规划，需要确保 d 是笛卡尔空间内的总距离 ，最小时间为 t_min , 我不知道笛卡尔空间加速度是多少，先给了个 1.0 试试水
     let (t_min, f_t) = simple_4th_curve(1., 10. / d, 8. / d);
     let mut t = Duration::from_secs(0);
     let t_min = Duration::from_secs_f64(t_min);
@@ -37,43 +43,83 @@ fn main() -> RobotResult<()> {
     };
 
     robot.move_with_closure(closure)?;
-
     Ok(())
 }
 
-// 这个函数是设计用于生成一个圆锥螺旋线的轨迹，返回一个按进展返回运动的闭包和一个最大距离
+// ================== 工具坐标系转换函数 ==================
+/// 将工具目标位姿转换为法兰坐标系位姿
+fn compute_flange_pose(
+    tool_pos: &[f64; 3],
+    tool_rot: &[f64; 3],
+    tool_offset: &na::Vector3<f64>,
+) -> Pose {
+    let rot = na::Rotation3::from_euler_angles(
+        tool_rot[0].to_radians(),
+        tool_rot[1].to_radians(),
+        tool_rot[2].to_radians(),
+    );
+    // 法兰位置 = 工具位置 - 旋转后的工具偏移量
+    let flange_pos = na::Vector3::new(tool_pos[0], tool_pos[1], tool_pos[2]) - rot * tool_offset;
+    Pose::Euler(
+        [flange_pos.x, flange_pos.y, flange_pos.z],
+        *tool_rot // 工具无旋转时，法兰姿态=工具姿态
+    )
+}
+
+// ================== 曲线生成函数 ==================
 fn cone_spiral_curve(
-    vertex: [f64; 3],
+    vertex: [f64; 3],   // 工具坐标系下的顶点位置
     h: f64,
     loops: usize,
     theta: f64,
     alpha: f64,
+    tool_offset: &na::Vector3<f64>, // 新增工具偏移参数
 ) -> (f64, Arc<dyn Fn(f64) -> MotionType<JAKA_DOF> + Send + Sync>) {
     let r_base = h * theta.tan();
     let n = loops as f64;
     let sin_theta = theta.sin();
 
-    // 解析计算总长度
+    // 解析计算总长度（保持不变）
     let k = 4.0 * PI.powi(2) * n.powi(2) * sin_theta.powi(2);
     let total_length = if k < 1e-6 {
-        h / theta.cos() // 直线情况
+        h / theta.cos()
     } else {
         let sqrt_k = k.sqrt();
         let sqrt_1_plus_k = (1.0 + k).sqrt();
         h / theta.cos() * (0.5 * sqrt_1_plus_k + 0.5 / sqrt_k * (sqrt_k + sqrt_1_plus_k).ln())
     };
 
+    let tool_offset = tool_offset.clone(); // 克隆偏移量用于闭包
     let closure = Arc::new(move |s: f64| {
         let t = s.clamp(0.0, 1.0);
-        // --------------------------------------
-        // let x = t.sqrt(); // 反解x = sqrt(t)
-        // compute_point(x, vertex, h, loops, r_base, alpha)
-        // --------------------------------------
-        compute_point(t, vertex, h, loops, r_base, alpha)
+        let x = t.sqrt(); // 反解x = sqrt(t)
+        
+        // 1. 计算工具坐标系下的目标位姿
+        let tool_motion = compute_point(x, vertex, h, loops, r_base, alpha);
+        
+        // 2. 转换为法兰坐标系位姿
+        if let MotionType::Cartesian(Pose::Euler(pos, rot)) = tool_motion {
+            // 法兰位置 = 工具位置 - 旋转后的工具偏移量
+            let flange_pos = na::Vector3::new(pos[0], pos[1], pos[2]) 
+                - na::Rotation3::from_euler_angles(
+                    rot[0].to_radians(),
+                    rot[1].to_radians(),
+                    rot[2].to_radians(),
+                ) * tool_offset;
+            
+            // 保持姿态不变（工具无旋转时）
+            MotionType::Cartesian(Pose::Euler(
+                [flange_pos.x, flange_pos.y, flange_pos.z],
+                rot
+            ))
+        } else {
+            tool_motion
+        }
     });
 
     (total_length, closure)
 }
+
 
 // gpt 写的函数，计算当前点的坐标和姿态
 fn compute_point(
