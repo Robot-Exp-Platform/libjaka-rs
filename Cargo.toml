@@ -33,7 +33,7 @@ robot_behavior = { version = "0.4.2" }
 cxx-build = "1.0"
 
 [features]
-default = ["to_py", "to_cxx"]
+default = ["to_py"]
 debug = []
 ffi = []
 to_py = ["pyo3", "ffi", "robot_behavior/to_py"]
