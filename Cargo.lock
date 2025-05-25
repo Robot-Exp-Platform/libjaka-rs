@@ -238,6 +238,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "cxx-build"
+version = "1.0.158"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "36a8232661d66dcf713394726157d3cfe0a89bfc85f52d6e9f9bbc2306797fe7"
+dependencies = [
+ "cc",
+ "codespan-reporting",
+ "proc-macro2",
+ "quote",
+ "scratch",
+ "syn",
+]
+
+[[package]]
 name = "cxxbridge-cmd"
 version = "1.0.158"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -627,6 +641,7 @@ version = "0.1.4-a"
 dependencies = [
  "bincode",
  "cxx",
+ "cxx-build",
  "nalgebra",
  "paste",
  "pyo3",
@@ -1065,6 +1080,12 @@ checksum = "93fc1dc3aaa9bfed95e02e6eadabb4baf7e3078b0bd1b4d7b6b0b68378900502"
 dependencies = [
  "winapi-util",
 ]
+
+[[package]]
+name = "scratch"
+version = "1.0.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9f6280af86e5f559536da57a45ebc84948833b3bee313a7dd25232e09c878a52"
 
 [[package]]
 name = "semver"

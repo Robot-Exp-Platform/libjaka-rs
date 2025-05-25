@@ -58,11 +58,11 @@ impl JakaRobot {
             robot_state,
             is_moving: false,
             coord: OverrideOnce::new(Coord::OCS),
-            max_vel: OverrideOnce::new(JAKA_ROBOT_MAX_JOINT_VEL),
-            max_acc: OverrideOnce::new(JAKA_ROBOT_MAX_JOINT_ACC),
-            max_jerk: OverrideOnce::new([f64::INFINITY; JAKA_DOF]),
-            max_cartesian_vel: OverrideOnce::new(JAKA_ROBOT_MAX_CARTESIAN_VEL),
-            max_cartesian_acc: OverrideOnce::new(JAKA_ROBOT_MAX_CARTESIAN_ACC),
+            max_vel: OverrideOnce::new(Self::JOINT_VEL_BOUND),
+            max_acc: OverrideOnce::new(Self::JOINT_ACC_BOUND),
+            max_jerk: OverrideOnce::new(Self::JOINT_JERK_BOUND),
+            max_cartesian_vel: OverrideOnce::new(Self::CARTESIAN_VEL_BOUND),
+            max_cartesian_acc: OverrideOnce::new(Self::CARTESIAN_ACC_BOUND),
         }
     }
 
@@ -253,11 +253,11 @@ impl ArmParam<JAKA_DOF> for JakaRobot {
     const JOINT_MAX: [f64; JAKA_DOF] = JAKA_ROBOT_MAX_JOINT;
     const JOINT_VEL_BOUND: [f64; JAKA_DOF] = JAKA_ROBOT_MAX_JOINT_VEL;
     const JOINT_ACC_BOUND: [f64; JAKA_DOF] = JAKA_ROBOT_MAX_JOINT_ACC;
-    const JOINT_JERK_BOUND: [f64; JAKA_DOF] = [f64::INFINITY; JAKA_DOF];
+    const JOINT_JERK_BOUND: [f64; JAKA_DOF] = [f64::MAX; JAKA_DOF];
     const CARTESIAN_VEL_BOUND: f64 = JAKA_ROBOT_MAX_CARTESIAN_VEL;
     const CARTESIAN_ACC_BOUND: f64 = JAKA_ROBOT_MAX_CARTESIAN_ACC;
-    const TORQUE_BOUND: [f64; JAKA_DOF] = [f64::INFINITY; JAKA_DOF];
-    const TORQUE_DOT_BOUND: [f64; JAKA_DOF] = [f64::INFINITY; JAKA_DOF];
+    const TORQUE_BOUND: [f64; JAKA_DOF] = [f64::MAX; JAKA_DOF];
+    const TORQUE_DOT_BOUND: [f64; JAKA_DOF] = [f64::MAX; JAKA_DOF];
 }
 
 impl ArmPreplannedMotionImpl<JAKA_DOF> for JakaRobot {
