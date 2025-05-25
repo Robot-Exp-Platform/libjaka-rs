@@ -4,8 +4,8 @@ use pyo3::{
 };
 use robot_behavior::{
     LoadState, PyArmState, PyPose, behavior::*, py_arm_behavior, py_arm_preplanned_motion,
-    py_arm_preplanned_motion_ext, py_arm_real_time_control, py_arm_real_time_control_ext,
-    py_robot_behavior,
+    py_arm_preplanned_motion_ext, py_arm_preplanned_motion_impl, py_arm_real_time_control,
+    py_arm_real_time_control_ext, py_robot_behavior,
 };
 
 use crate::JakaRobot;
@@ -24,6 +24,7 @@ impl PyJakaRobot {
 py_robot_behavior!(PyJakaRobot(JakaRobot));
 py_arm_behavior!(PyJakaRobot<{6}>(JakaRobot));
 py_arm_preplanned_motion!(PyJakaRobot<{6}>(JakaRobot));
+py_arm_preplanned_motion_impl!(PyJakaRobot<{6}>(JakaRobot));
 py_arm_preplanned_motion_ext!(PyJakaRobot<{6}>(JakaRobot));
 py_arm_real_time_control!(PyJakaRobot<{6}>(JakaRobot));
 py_arm_real_time_control_ext!(PyJakaRobot<{6}>(JakaRobot));

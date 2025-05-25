@@ -637,7 +637,7 @@ checksum = "d750af042f7ef4f724306de029d18836c26c1765a54a6a3f094cbd23a7267ffa"
 
 [[package]]
 name = "libjaka"
-version = "0.1.4-a"
+version = "0.1.4-b"
 dependencies = [
  "bincode",
  "cxx",
@@ -1026,7 +1026,7 @@ dependencies = [
 
 [[package]]
 name = "robot_behavior"
-version = "0.4.1"
+version = "0.4.2"
 dependencies = [
  "cxx",
  "libc",
