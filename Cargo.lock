@@ -1026,9 +1026,7 @@ dependencies = [
 
 [[package]]
 name = "robot_behavior"
-version = "0.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f0aa96be5d6c421d5b392d98378e26d902542a606128fa4ae3213b12f0f198d0"
+version = "0.4.3"
 dependencies = [
  "cxx",
  "libc",
