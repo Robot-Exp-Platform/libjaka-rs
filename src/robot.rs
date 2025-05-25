@@ -1,7 +1,8 @@
 use crate::{
     JAKA_DOF, JAKA_FREQUENCY, JAKA_ROBOT_DEFAULT_JOINT, JAKA_ROBOT_MAX_CARTESIAN_ACC,
     JAKA_ROBOT_MAX_CARTESIAN_VEL, JAKA_ROBOT_MAX_JOINT, JAKA_ROBOT_MAX_JOINT_ACC,
-    JAKA_ROBOT_MAX_JOINT_VEL, JAKA_ROBOT_MIN_JOINT, JAKA_VERSION, network::NetWork, types::*,
+    JAKA_ROBOT_MAX_JOINT_VEL, JAKA_ROBOT_MAX_ROTATION_ACC, JAKA_ROBOT_MAX_ROTATION_VEL,
+    JAKA_ROBOT_MIN_JOINT, JAKA_VERSION, network::NetWork, types::*,
 };
 use robot_behavior::{
     ArmState, ControlType, Coord, LoadState, MotionType, OverrideOnce, Pose, RobotException,
@@ -21,9 +22,10 @@ pub struct JakaRobot {
     coord: OverrideOnce<Coord>,
     max_vel: OverrideOnce<[f64; JAKA_DOF]>,
     max_acc: OverrideOnce<[f64; JAKA_DOF]>,
-    max_jerk: OverrideOnce<[f64; JAKA_DOF]>,
     max_cartesian_vel: OverrideOnce<f64>,
     max_cartesian_acc: OverrideOnce<f64>,
+    max_rotation_vel: OverrideOnce<f64>,
+    max_rotation_acc: OverrideOnce<f64>,
 }
 
 macro_rules! cmd_fn {
@@ -53,17 +55,20 @@ impl JakaRobot {
     pub fn new(ip: &str) -> Self {
         let network = NetWork::new(ip);
         let robot_state = NetWork::state_connect(ip);
-        Self {
+        let mut robot = Self {
             network,
             robot_state,
             is_moving: false,
             coord: OverrideOnce::new(Coord::OCS),
-            max_vel: OverrideOnce::new(JAKA_ROBOT_MAX_JOINT_VEL),
-            max_acc: OverrideOnce::new(JAKA_ROBOT_MAX_JOINT_ACC),
-            max_jerk: OverrideOnce::new([f64::INFINITY; JAKA_DOF]),
-            max_cartesian_vel: OverrideOnce::new(JAKA_ROBOT_MAX_CARTESIAN_VEL),
-            max_cartesian_acc: OverrideOnce::new(JAKA_ROBOT_MAX_CARTESIAN_ACC),
-        }
+            max_vel: OverrideOnce::new(Self::JOINT_VEL_BOUND),
+            max_acc: OverrideOnce::new(Self::JOINT_ACC_BOUND),
+            max_cartesian_vel: OverrideOnce::new(Self::CARTESIAN_VEL_BOUND),
+            max_cartesian_acc: OverrideOnce::new(Self::CARTESIAN_ACC_BOUND),
+            max_rotation_vel: OverrideOnce::new(Self::ROTATION_VEL_BOUND),
+            max_rotation_acc: OverrideOnce::new(Self::ROTATION_ACC_BOUND),
+        };
+        let _ = robot.set_speed(0.05);
+        robot
     }
 
     cmd_fn!(_power_on, {Command::PowerOn};; PowerOnState);
@@ -236,12 +241,29 @@ impl ArmBehavior<JAKA_DOF> for JakaRobot {
         self.max_acc.once(*joint_acc);
         self
     }
-    fn with_jerk(&mut self, joint_jerk: &[f64; JAKA_DOF]) -> &mut Self {
-        self.max_jerk.once(*joint_jerk);
+    fn with_jerk(&mut self, _joint_jerk: &[f64; JAKA_DOF]) -> &mut Self {
         self
     }
     fn with_cartesian_velocity(&mut self, cartesian_vel: f64) -> &mut Self {
         self.max_cartesian_vel.once(cartesian_vel);
+        self
+    }
+    fn with_cartesian_acceleration(&mut self, cartesian_acc: f64) -> &mut Self {
+        self.max_cartesian_acc.once(cartesian_acc);
+        self
+    }
+    fn with_cartesian_jerk(&mut self, _cartesian_jerk: f64) -> &mut Self {
+        self
+    }
+    fn with_rotation_velocity(&mut self, rotation_vel: f64) -> &mut Self {
+        self.max_rotation_vel.once(rotation_vel);
+        self
+    }
+    fn with_rotation_acceleration(&mut self, rotation_acc: f64) -> &mut Self {
+        self.max_rotation_acc.once(rotation_acc);
+        self
+    }
+    fn with_rotation_jerk(&mut self, _rotation_jerk: f64) -> &mut Self {
         self
     }
 }
@@ -256,6 +278,8 @@ impl ArmParam<JAKA_DOF> for JakaRobot {
     const JOINT_JERK_BOUND: [f64; JAKA_DOF] = [f64::INFINITY; JAKA_DOF];
     const CARTESIAN_VEL_BOUND: f64 = JAKA_ROBOT_MAX_CARTESIAN_VEL;
     const CARTESIAN_ACC_BOUND: f64 = JAKA_ROBOT_MAX_CARTESIAN_ACC;
+    const ROTATION_VEL_BOUND: f64 = JAKA_ROBOT_MAX_ROTATION_VEL;
+    const ROTATION_ACC_BOUND: f64 = JAKA_ROBOT_MAX_ROTATION_ACC;
     const TORQUE_BOUND: [f64; JAKA_DOF] = [f64::INFINITY; JAKA_DOF];
     const TORQUE_DOT_BOUND: [f64; JAKA_DOF] = [f64::INFINITY; JAKA_DOF];
 }
