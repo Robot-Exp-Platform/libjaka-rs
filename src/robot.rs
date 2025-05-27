@@ -119,12 +119,6 @@ impl JakaRobot {
     cmd_fn!(_clear_error, {Command::ClearError};; ClearErrorState);
     cmd_fn!(_get_joint_pos, {Command::GetJointPos};; GetJointPosState);
     cmd_fn!(_get_tcp_pos, {Command::GetTcpPos};; GetTcpPosState);
-
-    pub fn set_speed(&mut self, speed: f64) -> RobotResult<()> {
-        let rapid_rate_data = RapidRateData { rate_value: speed };
-        self._rapid_rate(rapid_rate_data)?;
-        Ok(())
-    }
 }
 
 impl RobotBehavior for JakaRobot {
