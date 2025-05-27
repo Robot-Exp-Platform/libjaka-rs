@@ -15,7 +15,7 @@ fn main() -> RobotResult<()> {
     let tool_offset = na::Vector3::new(107.0, 0.0, 30.0); 
 
     // 初始移动（目标位置为工具末端的位置）
-    let tool_target_pos = [410.0, 0.0, 30.0];
+    let tool_target_pos = [250.0, 0.0, 30.0];
     let tool_target_rot = [-180.0, 0.0, 180.0];
     
     // 转换为法兰坐标系目标
@@ -29,8 +29,8 @@ fn main() -> RobotResult<()> {
         tool_target_pos, // 传入的是工具目标位置
         60.0, 
         3, 
-        0.3, 
-        0.3,
+        0.1, 
+        0.1,
         &tool_offset     // 传入工具偏移量
     );
 
