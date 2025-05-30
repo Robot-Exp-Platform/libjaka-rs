@@ -90,7 +90,8 @@ def plot_speed_colored_trajectory(xyz, point_step=5):
     ax.set_xlabel("X (mm)")
     ax.set_ylabel("Y (mm)")
     ax.set_zlabel("Z (mm)")
-    ax.set_title("Trajectory Colored by Speed")
+    # ax.set_title("Trajectory Colored by Speed (Constant Speed Approx.)")
+    ax.set_title("Trajectory Colored by Speed (Constant Angular Speed)")
     ax.legend()
     plt.tight_layout()
     plt.show()
@@ -113,12 +114,13 @@ def set_equal_axes(ax, xyz):
     mid_y = (xyz[:, 1].max() + xyz[:, 1].min()) * 0.5
     mid_z = (xyz[:, 2].max() + xyz[:, 2].min()) * 0.5
 
-    ax.set_xlim(mid_x - max_range, mid_x + max_range)
-    ax.set_ylim(mid_y - max_range, mid_y + max_range)
-    ax.set_zlim(mid_z - max_range, mid_z + max_range)
+    ax.set_xlim(mid_x - 0.6 * max_range, mid_x + 0.6 * max_range)
+    ax.set_ylim(mid_y - 0.6 * max_range, mid_y + 0.6 * max_range)
+    ax.set_zlim(mid_z - 0.6 * max_range, mid_z + 0.6 * max_range)
 
 
 if __name__ == "__main__":
-    file_path = "scripts/output666"  # 替换为实际路径
+    file_path = "scripts/output_spiral"  # 替换为实际路径
+    # file_path = "scripts/output_10_8"
     xyz, _ = load_trajectory(file_path)
     plot_speed_colored_trajectory(xyz, point_step=10)  # 每10个点显示一个
