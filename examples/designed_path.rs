@@ -24,7 +24,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     robot._stop_program()?;
 
     // 2. 读取 CSV 文件
-    let file = File::open("examples/5x5rect.csv")?;
+    let file = File::open("scripts/lines.csv")?;
     let mut rdr = csv::Reader::from_reader(file);
 
     // 3. 遍历所有坐标点
