@@ -240,7 +240,7 @@ pub type ServoJResponse = Response<{ Command::ServoJ }, ServoJState>;
 pub type ServoJState = DefaultState;
 #[derive(Serialize, Deserialize)]
 pub struct ServoJData {
-    #[serde(rename = "jointAngles")]
+    #[serde(rename = "jointPosition")]
     pub joint_angles: [f64; 6],
     #[serde(rename = "relFlag")]
     pub relflag: u8,
