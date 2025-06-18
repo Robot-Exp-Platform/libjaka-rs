@@ -325,13 +325,13 @@ impl ArmPreplannedMotionImpl<JAKA_DOF> for JakaRobot {
         self.is_moving = true;
 
         let coord = self.coord.get();
-        let move_data = JointMoveData {
-            joint_position: (*target).into(),
+        let move_data = MoveLData {
+            cart_position: (*target).into(),
             speed: self.max_cartesian_vel.get(),
             accel: self.max_cartesian_acc.get(),
             relflag: if coord == Coord::OCS { 0 } else { 1 },
         };
-        self._joint_move(move_data)?;
+        self._move_l(move_data)?;
 
         self.is_moving = false;
         Ok(())
