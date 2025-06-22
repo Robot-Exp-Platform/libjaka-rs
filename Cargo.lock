@@ -514,13 +514,13 @@ checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
 
 [[package]]
 name = "libc"
-version = "0.2.171"
+version = "0.2.174"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c19937216e9d3aa9956d9bb8dfc0b0c8beb6058fc4f7a4dc4d850edf86a237d6"
+checksum = "1171693293099992e19cddea4e8b849964e9846f4acee11b3948bcc337be8776"
 
 [[package]]
 name = "libjaka-rs"
-version = "0.1.6"
+version = "0.1.7"
 dependencies = [
  "bincode",
  "nalgebra",
@@ -896,7 +896,7 @@ dependencies = [
 
 [[package]]
 name = "robot_behavior"
-version = "0.4.5"
+version = "0.4.6"
 dependencies = [
  "libc",
  "nalgebra",
