@@ -47,7 +47,7 @@ fn test_closure(closure: pyo3::Py<pyo3::PyAny>) {
         println!("Failed to call closure");
         todo!()
     };
-    println!("Joint: {:?}, Is Finished: {}", joint, is_finished);
+    println!("Joint: {joint:?}, Is Finished: {is_finished}");
 }
 
 #[pyo3::pymodule]
