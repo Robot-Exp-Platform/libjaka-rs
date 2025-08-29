@@ -1,6 +1,6 @@
 // use std::{thread::sleep, time::Duration};
 
-use libjaka_rs::JakaRobot;
+use libjaka::JakaRobot;
 use robot_behavior::{Pose, RobotResult, behavior::*};
 
 fn main() -> RobotResult<()> {

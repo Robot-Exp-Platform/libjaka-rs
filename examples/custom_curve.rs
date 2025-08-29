@@ -1,7 +1,7 @@
 use nalgebra as na;
 use std::{f64::consts::PI, sync::Arc, time::Duration};
 
-use libjaka_rs::{JAKA_DOF, JakaRobot};
+use libjaka::{JAKA_DOF, JakaRobot};
 use robot_behavior::{
     ArmBehavior, ArmPreplannedMotionImpl, ArmRealtimeControl, MotionType, Pose, RobotBehavior,
     RobotResult,

@@ -1,0 +1,66 @@
+name: Release Build
+
+on:
+  push:
+    tags:
+      - "v*" # 通过 git tag 触发
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Build Release
+        run: |
+          cargo build --release
+
+      - name: Collect Artifacts
+        run: |
+          mkdir -p artifacts/include artifacts/lib
+          # 复制头文件
+          find target/ -name '*.h' -exec cp {} artifacts/include/ \;
+          # 复制动态库
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            cp target/release/libmylib.so artifacts/lib/
+          elif [ "$RUNNER_OS" == "macOS" ]; then
+            cp target/release/libmylib.dylib artifacts/lib/
+          elif [ "$RUNNER_OS" == "Windows" ]; then
+            cp target/release/mylib.dll artifacts/lib/
+          fi
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ runner.os }}-binaries
+          path: artifacts/
+
+  create-release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref }}
+          files: |
+            artifacts/**/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

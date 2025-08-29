@@ -123,8 +123,8 @@ impl JakaRobot {
 
 impl RobotBehavior for JakaRobot {
     type State = RobotState;
-    fn version(&self) -> String {
-        JAKA_VERSION.to_string()
+    fn version() -> String {
+        format!("JAKA Robot v{JAKA_VERSION}")
     }
     fn init(&mut self) -> RobotResult<()> {
         self._power_on()?.into()
@@ -269,7 +269,7 @@ impl ArmParam<JAKA_DOF> for JakaRobot {
     const JOINT_MAX: [f64; JAKA_DOF] = JAKA_ROBOT_MAX_JOINT;
     const JOINT_VEL_BOUND: [f64; JAKA_DOF] = JAKA_ROBOT_MAX_JOINT_VEL;
     const JOINT_ACC_BOUND: [f64; JAKA_DOF] = JAKA_ROBOT_MAX_JOINT_ACC;
-    const JOINT_JERK_BOUND: [f64; JAKA_DOF] = [f64::INFINITY; JAKA_DOF];
+    const JOINT_JERK_BOUND: [f64; JAKA_DOF] = [f64::MAX; JAKA_DOF];
     const CARTESIAN_VEL_BOUND: f64 = JAKA_ROBOT_MAX_CARTESIAN_VEL;
     const CARTESIAN_ACC_BOUND: f64 = JAKA_ROBOT_MAX_CARTESIAN_ACC;
     const ROTATION_VEL_BOUND: f64 = JAKA_ROBOT_MAX_ROTATION_VEL;
