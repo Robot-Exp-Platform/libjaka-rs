@@ -5,8 +5,8 @@ use crate::{
     JAKA_ROBOT_MIN_JOINT, JAKA_VERSION, network::NetWork, types::*,
 };
 use robot_behavior::{
-    ArmState, ControlType, Coord, LoadState, MotionType, OverrideOnce, Pose, RobotException,
-    RobotResult, behavior::*,
+    ArmState, ControlType, Coord, LoadState, MotionType, OverrideOnce, Pose, Realtime,
+    RobotException, RobotResult, behavior::*,
 };
 use std::{
     sync::{Arc, Mutex, RwLock},
@@ -362,13 +362,13 @@ impl ArmStreamingHandle<JAKA_DOF> for JakaStreamingHandle {
         *self.motion.lock().unwrap() = Some(target);
         Ok(())
     }
-    fn last_motion(&self) -> RobotResult<MotionType<JAKA_DOF>> {
+    fn last_motion(&self) -> Option<MotionType<JAKA_DOF>> {
         unimplemented!()
     }
     fn control_with(&mut self, _control: ControlType<JAKA_DOF>) -> RobotResult<()> {
         unimplemented!()
     }
-    fn last_control(&self) -> RobotResult<ControlType<JAKA_DOF>> {
+    fn last_control(&self) -> Option<ControlType<JAKA_DOF>> {
         unimplemented!()
     }
 }
@@ -399,6 +399,8 @@ impl ArmStreamingMotion<JAKA_DOF> for JakaRobot {
 }
 
 // impl ArmStreamingMotionExt for JakaRobot {}
+
+impl Realtime for JakaRobot {}
 
 impl ArmRealtimeControl<JAKA_DOF> for JakaRobot {
     fn move_with_closure<FM>(&mut self, mut closure: FM) -> RobotResult<()>
