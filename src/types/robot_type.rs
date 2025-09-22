@@ -147,13 +147,16 @@ pub type EnableRobotResponse = Response<{ Command::EnableRobot }, EnableRobotSta
 pub type EnableRobotState = DefaultState;
 
 // joint move
-pub type JointMoveRequest = Request<{ Command::JointMove }, JointMoveData>;
+pub type JointMoveRequest<const N: usize> = Request<{ Command::JointMove }, JointMoveData<N>>;
 pub type JointMoveResponse = Response<{ Command::JointMove }, JointMoveState>;
 pub type JointMoveState = DefaultState;
 #[derive(Serialize, Deserialize)]
-pub struct JointMoveData {
+pub struct JointMoveData<const N: usize>
+where
+    [f64; N]: Serialize + for<'a> Deserialize<'a>,
+{
     #[serde(rename = "jointPosition")]
-    pub joint_position: [f64; 6],
+    pub joint_position: [f64; N],
     pub speed: f64,
     pub accel: f64,
     #[serde(rename = "relFlag")]
@@ -161,13 +164,16 @@ pub struct JointMoveData {
 }
 
 // end move
-pub type EndMoveRequest = Request<{ Command::EndMove }, EndMoveData>;
+pub type EndMoveRequest<const N: usize> = Request<{ Command::EndMove }, EndMoveData<N>>;
 pub type EndMoveResponse = Response<{ Command::EndMove }, EndMoveState>;
 pub type EndMoveState = DefaultState;
 #[derive(Serialize, Deserialize)]
-pub struct EndMoveData {
+pub struct EndMoveData<const N: usize>
+where
+    [f64; N]: Serialize + for<'a> Deserialize<'a>,
+{
     #[serde(rename = "endPosition")]
-    pub end_position: [f64; 6],
+    pub end_position: [f64; N],
     pub speed: f64,
     pub accel: f64,
 }
@@ -235,13 +241,16 @@ pub struct ServoMoveData {
 }
 
 // servo j
-pub type ServoJRequest = Request<{ Command::ServoJ }, ServoJData>;
+pub type ServoJRequest<const N: usize> = Request<{ Command::ServoJ }, ServoJData<N>>;
 pub type ServoJResponse = Response<{ Command::ServoJ }, ServoJState>;
 pub type ServoJState = DefaultState;
 #[derive(Serialize, Deserialize)]
-pub struct ServoJData {
+pub struct ServoJData<const N: usize>
+where
+    [f64; N]: Serialize + for<'a> Deserialize<'a>,
+{
     #[serde(rename = "jointPosition")]
-    pub joint_angles: [f64; 6],
+    pub joint_angles: [f64; N],
     #[serde(rename = "relFlag")]
     pub relflag: u8,
 }

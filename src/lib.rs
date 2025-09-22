@@ -10,7 +10,7 @@ mod robot;
 pub mod types;
 
 pub use params::*;
-pub use robot::JakaRobot;
+pub use robot::*;
 
 #[cfg(feature = "to_py")]
 #[pyo3::pymodule]
