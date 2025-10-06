@@ -108,7 +108,12 @@ pub enum Command {
     GetJointPos,
     #[serde(rename = "get_tcp_pos")]
     GetTcpPos,
+    #[serde(rename = "set_tio_vout_param")]
+    SetTioVoutParam,
+    #[serde(rename = "get_tio_vout_param")]
+    GetTioVoutParam,
 }
+
 pub struct Request<const C: Command, D> {
     pub data: D,
 }
@@ -748,6 +753,29 @@ pub struct GetTcpPosState {
     #[serde(rename = "errorMsg")]
     pub error_msg: String,
     pub tcp_pos: [f64; 6],
+}
+
+// set tio vout param
+pub type SetTioVoutParamRequest = Request<{ Command::SetTioVoutParam }, SetTioVoutParamData>;
+pub type SetTioVoutParamResponse = Response<{ Command::SetTioVoutParam }, SetTioVoutParamState>;
+pub type SetTioVoutParamState = DefaultState;
+#[derive(Serialize, Deserialize)]
+pub struct SetTioVoutParamData {
+    pub tio_vout_ena: u8,
+    pub tio_vout_vol: u8,
+}
+
+// get tio vout param
+pub type GetTioVoutParamRequest = Request<{ Command::GetTioVoutParam }, ()>;
+pub type GetTioVoutParamResponse = Response<{ Command::GetTioVoutParam }, GetTioVoutParamState>;
+#[derive(Serialize, Deserialize, Debug)]
+pub struct GetTioVoutParamState {
+    #[serde(rename = "errorCode")]
+    pub error_code: String,
+    #[serde(rename = "errorMsg")]
+    pub error_msg: String,
+    pub tio_vout_ena: u8,
+    pub tio_vout_vol: u8,
 }
 
 impl From<DefaultState> for RobotResult<()> {

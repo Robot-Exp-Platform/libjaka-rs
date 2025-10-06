@@ -1,21 +1,47 @@
-use crate::JakaRobot;
-use nalgebra as na;
 use robot_behavior::{
-    ArmState, Coord, LoadState, MotionType, Pose, RobotResult, behavior::*, c_arm_behavior,
-    c_arm_param, c_arm_preplanned_motion, c_arm_preplanned_motion_ext,
-    c_arm_preplanned_motion_impl, c_robot_behavior, impl_self,
+    ControlType, CxxArmState, LoadState, MotionType, behavior::*, cxx_arm_behavior, cxx_arm_param,
+    cxx_arm_preplanned_motion, cxx_arm_preplanned_motion_ext, cxx_arm_preplanned_motion_impl,
+    cxx_robot_behavior,
 };
 
-struct CJakaRobot(JakaRobot);
+struct JakaMini2(crate::JakaMini2);
 
 #[cxx::bridge]
-mod ffi {
+mod libjaka {
+    pub struct CxxMotionType {
+        pub mode: CxxMotionTypeMode,
+        pub values: Vec<f64>,
+    }
+    pub enum CxxMotionTypeMode {
+        Joint,
+        JointVel,
+        Cartesian,
+        CartesianVel,
+        Position,
+        PositionVel,
+        Stop,
+    }
+    pub struct CxxControlType {
+        pub mode: CxxControlTypeMode,
+        pub values: Vec<f64>,
+    }
+    pub enum CxxControlTypeMode {
+        Zero,
+        Torque,
+    }
+    pub struct CxxLoadState {
+        pub m: f64,
+        pub x: [f64; 3],
+        pub i: [f64; 9],
+    }
     extern "Rust" {
-        type CJakaRobot;
+        type JakaMini2;
 
-        fn create(ip: &str) -> Box<CJakaRobot>;
+        #[Self = "JakaMini2"]
+        fn attach(ip: &str) -> Box<JakaMini2>;
 
-        fn version(&self) -> String;
+        #[Self = "JakaMini2"]
+        fn version() -> String;
         fn init(&mut self) -> Result<()>;
         fn shutdown(&mut self) -> Result<()>;
         fn enable(&mut self) -> Result<()>;
@@ -36,54 +62,108 @@ mod ffi {
     }
 }
 
-fn create(ip: &str) -> Box<CJakaRobot> {
-    Box::new(CJakaRobot(JakaRobot::new(ip)))
+pub use libjaka::*;
+
+impl JakaMini2 {
+    pub fn attach(ip: &str) -> Box<Self> {
+        Box::new(JakaMini2(crate::JakaMini2::new(ip)))
+    }
 }
 
-impl CJakaRobot {
-    c_robot_behavior!(CJakaRobot(JakaRobot));
-    c_arm_behavior!(CJakaRobot<{6}>(JakaRobot));
-    c_arm_param!(CJakaRobot<{6}>(JakaRobot));
-    c_arm_preplanned_motion_impl!(CJakaRobot<{6}>(JakaRobot));
-    c_arm_preplanned_motion!(CJakaRobot<{6}>(JakaRobot));
-    c_arm_preplanned_motion_ext!(CJakaRobot<{6}>(JakaRobot));
+impl JakaMini2 {
+    cxx_robot_behavior!(JakaMini2(crate::JakaMini2));
+    cxx_arm_behavior!(JakaMini2<{6}>(crate::JakaMini2));
+    cxx_arm_param!(JakaMini2<{6}>(crate::JakaMini2));
+    cxx_arm_preplanned_motion_impl!(JakaMini2<{6}>(crate::JakaMini2));
+    cxx_arm_preplanned_motion!(JakaMini2<{6}>(crate::JakaMini2));
+    cxx_arm_preplanned_motion_ext!(JakaMini2<{6}>(crate::JakaMini2));
 }
 
-// impl CJakaRobot {
-//     pub fn version(&self) -> String {
-//         self.0.version()
-//     }
-//     pub fn init(&mut self) -> RobotResult<()> {
-//         self.0.init()
-//     }
-//     pub fn shutdown(&mut self) -> RobotResult<()> {
-//         self.0.shutdown()
-//     }
-//     pub fn enable(&mut self) -> RobotResult<()> {
-//         self.0.enable()
-//     }
-//     pub fn disable(&mut self) -> RobotResult<()> {
-//         self.0.disable()
-//     }
-//     pub fn reset(&mut self) -> RobotResult<()> {
-//         self.0.reset()
-//     }
-//     pub fn is_moving(&mut self) -> bool {
-//         self.0.is_moving()
-//     }
-//     pub fn stop(&mut self) -> RobotResult<()> {
-//         self.0.stop()
-//     }
-//     pub fn pause(&mut self) -> RobotResult<()> {
-//         self.0.pause()
-//     }
-//     pub fn resume(&mut self) -> RobotResult<()> {
-//         self.0.resume()
-//     }
-//     pub fn emergency_stop(&mut self) -> RobotResult<()> {
-//         self.0.emergency_stop()
-//     }
-//     pub fn clear_emergency_stop(&mut self) -> RobotResult<()> {
-//         self.0.clear_emergency_stop()
-//     }
-// }
+impl<const N: usize> From<CxxMotionType> for MotionType<N> {
+    fn from(cxx: CxxMotionType) -> Self {
+        match cxx.mode {
+            CxxMotionTypeMode::Joint => MotionType::Joint(cxx.values.try_into().unwrap()),
+            CxxMotionTypeMode::JointVel => MotionType::JointVel(cxx.values.try_into().unwrap()),
+            CxxMotionTypeMode::Cartesian => MotionType::Cartesian(cxx.values.into()),
+            CxxMotionTypeMode::CartesianVel => {
+                MotionType::CartesianVel(cxx.values.try_into().unwrap())
+            }
+            CxxMotionTypeMode::Position => MotionType::Position(cxx.values.try_into().unwrap()),
+            CxxMotionTypeMode::PositionVel => {
+                MotionType::PositionVel(cxx.values.try_into().unwrap())
+            }
+            CxxMotionTypeMode::Stop => MotionType::Stop,
+            _ => panic!("Invalid mode for MotionType"),
+        }
+    }
+}
+
+impl<const N: usize> From<MotionType<N>> for CxxMotionType {
+    fn from(motion: MotionType<N>) -> Self {
+        match motion {
+            MotionType::Joint(v) => CxxMotionType {
+                mode: CxxMotionTypeMode::Joint,
+                values: v.to_vec(),
+            },
+            MotionType::JointVel(v) => CxxMotionType {
+                mode: CxxMotionTypeMode::JointVel,
+                values: v.to_vec(),
+            },
+            MotionType::Cartesian(v) => CxxMotionType {
+                mode: CxxMotionTypeMode::Cartesian,
+                values: v.into(),
+            },
+            MotionType::CartesianVel(v) => CxxMotionType {
+                mode: CxxMotionTypeMode::CartesianVel,
+                values: v.to_vec(),
+            },
+            MotionType::Position(v) => CxxMotionType {
+                mode: CxxMotionTypeMode::Position,
+                values: v.to_vec(),
+            },
+            MotionType::PositionVel(v) => CxxMotionType {
+                mode: CxxMotionTypeMode::PositionVel,
+                values: v.to_vec(),
+            },
+            MotionType::Stop => CxxMotionType {
+                mode: CxxMotionTypeMode::Position, // Use Position as a placeholder for Stop
+                values: vec![],
+            },
+        }
+    }
+}
+
+impl<const N: usize> From<CxxControlType> for ControlType<N> {
+    fn from(cxx: CxxControlType) -> Self {
+        match cxx.mode {
+            CxxControlTypeMode::Zero => ControlType::Zero,
+            CxxControlTypeMode::Torque => ControlType::Torque(cxx.values.try_into().unwrap()),
+            _ => panic!("Invalid mode for ControlType"),
+        }
+    }
+}
+
+impl<const N: usize> From<ControlType<N>> for CxxControlType {
+    fn from(control: ControlType<N>) -> Self {
+        match control {
+            ControlType::Zero => CxxControlType {
+                mode: CxxControlTypeMode::Zero,
+                values: vec![],
+            },
+            ControlType::Torque(v) => CxxControlType {
+                mode: CxxControlTypeMode::Torque,
+                values: v.to_vec(),
+            },
+        }
+    }
+}
+
+impl From<CxxLoadState> for LoadState {
+    fn from(cxx: CxxLoadState) -> Self {
+        LoadState {
+            m: cxx.m,
+            x: cxx.x,
+            i: cxx.i,
+        }
+    }
+}

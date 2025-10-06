@@ -5,24 +5,24 @@ use robot_behavior::{
     py_arm_real_time_control_ext, py_robot_behavior,
 };
 
-use crate::JakaRobot;
+use crate::JakaMini2;
 
-#[pyclass(name = "JakaRobot")]
-pub struct PyJakaRobot(JakaRobot);
+#[pyclass(name = "JakaMini2")]
+pub struct PyJakaMini2(JakaMini2);
 
 #[pymethods]
-impl PyJakaRobot {
+impl PyJakaMini2 {
     #[new]
     pub fn new(ip: &str) -> Self {
-        PyJakaRobot(JakaRobot::new(ip))
+        PyJakaMini2(JakaMini2::new(ip))
     }
 }
 
-py_robot_behavior!(PyJakaRobot(JakaRobot));
-py_arm_behavior!(PyJakaRobot<{6}>(JakaRobot));
-py_arm_param!(PyJakaRobot<{6}>(JakaRobot));
-py_arm_preplanned_motion!(PyJakaRobot<{6}>(JakaRobot));
-py_arm_preplanned_motion_impl!(PyJakaRobot<{6}>(JakaRobot));
-py_arm_preplanned_motion_ext!(PyJakaRobot<{6}>(JakaRobot));
-py_arm_real_time_control!(PyJakaRobot<{6}>(JakaRobot));
-py_arm_real_time_control_ext!(PyJakaRobot<{6}>(JakaRobot));
+py_robot_behavior!(PyJakaMini2(JakaMini2));
+py_arm_behavior!(PyJakaMini2<{6}>(JakaMini2));
+py_arm_param!(PyJakaMini2<{6}>(JakaMini2));
+py_arm_preplanned_motion!(PyJakaMini2<{6}>(JakaMini2));
+py_arm_preplanned_motion_impl!(PyJakaMini2<{6}>(JakaMini2));
+py_arm_preplanned_motion_ext!(PyJakaMini2<{6}>(JakaMini2));
+py_arm_real_time_control!(PyJakaMini2<{6}>(JakaMini2));
+py_arm_real_time_control_ext!(PyJakaMini2<{6}>(JakaMini2));

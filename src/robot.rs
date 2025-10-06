@@ -1,43 +1,40 @@
-use crate::{
-    JAKA_FREQUENCY, JAKA_MINI_DOF, JAKA_ROBOT_DEFAULT_JOINT, JAKA_ROBOT_MAX_CARTESIAN_ACC,
-    JAKA_ROBOT_MAX_CARTESIAN_VEL, JAKA_ROBOT_MAX_JOINT, JAKA_ROBOT_MAX_JOINT_ACC,
-    JAKA_ROBOT_MAX_JOINT_VEL, JAKA_ROBOT_MAX_ROTATION_ACC, JAKA_ROBOT_MAX_ROTATION_VEL,
-    JAKA_ROBOT_MIN_JOINT, JAKA_VERSION, network::NetWork, types::*,
-};
+use crate::{JAKA_FREQUENCY, JAKA_VERSION, network::NetWork, types::*};
 
 use robot_behavior::{
-    ArmState, ControlType, Coord, LoadState, MotionType, OverrideOnce, Pose, Realtime,
+    ArmDOF, ArmState, ControlType, Coord, LoadState, MotionType, OverrideOnce, Pose, Realtime,
     RobotException, RobotResult, behavior::*, utils::rad_to_deg,
 };
 use serde::{Deserialize, Serialize};
 use std::{
-    marker::ConstParamTy,
+    marker::PhantomData,
     sync::{Arc, Mutex, RwLock},
     thread::{self, sleep},
     time::Duration,
 };
 
-#[derive(ConstParamTy, PartialEq, Eq, Serialize, Deserialize, Debug)]
-pub enum JakaType {
-    JakaMini2,
+pub trait JakaType {
+    const N: usize;
 }
 
 /// # Jaja Robot (节卡机器人)
-pub struct JakaRobot<const T: JakaType, const N: usize> {
-    network: NetWork,
-    robot_state: Arc<RwLock<RobotState>>,
-    streaming_handle: thread::JoinHandle<()>,
-    is_moving: bool,
-    coord: OverrideOnce<Coord>,
-    max_vel: OverrideOnce<[f64; N]>,
-    max_acc: OverrideOnce<[f64; N]>,
-    max_cartesian_vel: OverrideOnce<f64>,
-    max_cartesian_acc: OverrideOnce<f64>,
-    max_rotation_vel: OverrideOnce<f64>,
-    max_rotation_acc: OverrideOnce<f64>,
+pub struct JakaRobot<T: JakaType, const N: usize> {
+    pub(crate) marker: PhantomData<T>,
+    pub(crate) network: NetWork,
+    pub(crate) robot_state: Arc<RwLock<RobotState>>,
+    pub(crate) streaming_handle: thread::JoinHandle<()>,
+    pub(crate) is_moving: bool,
+    pub(crate) coord: OverrideOnce<Coord>,
+    pub(crate) max_vel: OverrideOnce<[f64; N]>,
+    pub(crate) max_acc: OverrideOnce<[f64; N]>,
+    pub(crate) max_cartesian_vel: OverrideOnce<f64>,
+    pub(crate) max_cartesian_acc: OverrideOnce<f64>,
+    pub(crate) max_rotation_vel: OverrideOnce<f64>,
+    pub(crate) max_rotation_acc: OverrideOnce<f64>,
 }
 
-pub type JakaMini2 = JakaRobot<{ JakaType::JakaMini2 }, 6>;
+impl<T: JakaType, const N: usize> ArmDOF for JakaRobot<T, N> {
+    const N: usize = N;
+}
 
 macro_rules! cmd_fn {
     ($fn_name:ident, $command:expr; $arg_name:ident: $arg_type:ty; $ret_type:ty) => {
@@ -58,33 +55,7 @@ macro_rules! cmd_fn {
     };
 }
 
-impl JakaMini2 {
-    /// Create a new JakaRobot instance with the given IP address.
-    ///
-    /// # Arguments
-    /// * `ip` - A string slice that holds the IP address of the robot.
-    pub fn new(ip: &str) -> Self {
-        let network = NetWork::new(ip);
-        let robot_state = NetWork::state_connect(ip);
-        let mut robot = Self {
-            network,
-            robot_state,
-            streaming_handle: thread::spawn(|| {}),
-            is_moving: false,
-            coord: OverrideOnce::new(Coord::OCS),
-            max_vel: OverrideOnce::new(Self::JOINT_VEL_BOUND),
-            max_acc: OverrideOnce::new(Self::JOINT_ACC_BOUND),
-            max_cartesian_vel: OverrideOnce::new(Self::CARTESIAN_VEL_BOUND),
-            max_cartesian_acc: OverrideOnce::new(Self::CARTESIAN_ACC_BOUND),
-            max_rotation_vel: OverrideOnce::new(Self::ROTATION_VEL_BOUND),
-            max_rotation_acc: OverrideOnce::new(Self::ROTATION_ACC_BOUND),
-        };
-        let _ = robot.set_speed(0.05);
-        robot
-    }
-}
-
-impl<const T: JakaType, const N: usize> JakaRobot<T, N>
+impl<T: JakaType, const N: usize> JakaRobot<T, N>
 where
     [f64; N]: Serialize + for<'a> Deserialize<'a>,
 {
@@ -136,9 +107,11 @@ where
     cmd_fn!(_clear_error, {Command::ClearError};; ClearErrorState);
     cmd_fn!(_get_joint_pos, {Command::GetJointPos};; GetJointPosState);
     cmd_fn!(_get_tcp_pos, {Command::GetTcpPos};; GetTcpPosState);
+    cmd_fn!(_set_tio_vout_param, {Command::SetTioVoutParam}; data: SetTioVoutParamData; SetTioVoutParamState);
+    cmd_fn!(_get_tio_vout_param, {Command::GetTioVoutParam};; GetTioVoutParamState);
 }
 
-impl<const T: JakaType, const N: usize> RobotBehavior for JakaRobot<T, N>
+impl<T: JakaType, const N: usize> RobotBehavior for JakaRobot<T, N>
 where
     [f64; N]: Serialize + for<'a> Deserialize<'a>,
 {
@@ -189,7 +162,7 @@ where
     }
 }
 
-impl<const T: JakaType, const N: usize> ArmBehavior<N> for JakaRobot<T, N>
+impl<T: JakaType, const N: usize> ArmBehavior<N> for JakaRobot<T, N>
 where
     JakaRobot<T, N>: ArmParam<N>,
     [f64; N]: Serialize + for<'a> Deserialize<'a>,
@@ -282,23 +255,28 @@ where
     }
 }
 
-impl ArmParam<JAKA_MINI_DOF> for JakaMini2 {
-    const DH: [[f64; 4]; JAKA_MINI_DOF] = [[0.; 4]; JAKA_MINI_DOF];
-    const JOINT_DEFAULT: [f64; JAKA_MINI_DOF] = JAKA_ROBOT_DEFAULT_JOINT;
-    const JOINT_MIN: [f64; JAKA_MINI_DOF] = JAKA_ROBOT_MIN_JOINT;
-    const JOINT_MAX: [f64; JAKA_MINI_DOF] = JAKA_ROBOT_MAX_JOINT;
-    const JOINT_VEL_BOUND: [f64; JAKA_MINI_DOF] = JAKA_ROBOT_MAX_JOINT_VEL;
-    const JOINT_ACC_BOUND: [f64; JAKA_MINI_DOF] = JAKA_ROBOT_MAX_JOINT_ACC;
-    const JOINT_JERK_BOUND: [f64; JAKA_MINI_DOF] = [f64::MAX; JAKA_MINI_DOF];
-    const CARTESIAN_VEL_BOUND: f64 = JAKA_ROBOT_MAX_CARTESIAN_VEL;
-    const CARTESIAN_ACC_BOUND: f64 = JAKA_ROBOT_MAX_CARTESIAN_ACC;
-    const ROTATION_VEL_BOUND: f64 = JAKA_ROBOT_MAX_ROTATION_VEL;
-    const ROTATION_ACC_BOUND: f64 = JAKA_ROBOT_MAX_ROTATION_ACC;
-    const TORQUE_BOUND: [f64; JAKA_MINI_DOF] = [f64::MAX; JAKA_MINI_DOF];
-    const TORQUE_DOT_BOUND: [f64; JAKA_MINI_DOF] = [f64::MAX; JAKA_MINI_DOF];
+impl<T: JakaType, const N: usize> ArmParam<N> for JakaRobot<T, N>
+where
+    T: ArmParam<N>,
+{
+    const DH: [[f64; 4]; N] = T::DH;
+    const JOINT_DEFAULT: [f64; N] = T::JOINT_DEFAULT;
+    const JOINT_MIN: [f64; N] = T::JOINT_MIN;
+    const JOINT_MAX: [f64; N] = T::JOINT_MAX;
+    const JOINT_VEL_BOUND: [f64; N] = T::JOINT_VEL_BOUND;
+    const JOINT_ACC_BOUND: [f64; N] = T::JOINT_ACC_BOUND;
+    const JOINT_JERK_BOUND: [f64; N] = T::JOINT_JERK_BOUND;
+    const CARTESIAN_VEL_BOUND: f64 = T::CARTESIAN_VEL_BOUND;
+    const CARTESIAN_ACC_BOUND: f64 = T::CARTESIAN_ACC_BOUND;
+    const CARTESIAN_JERK_BOUND: f64 = T::CARTESIAN_JERK_BOUND;
+    const ROTATION_VEL_BOUND: f64 = T::ROTATION_VEL_BOUND;
+    const ROTATION_ACC_BOUND: f64 = T::ROTATION_ACC_BOUND;
+    const ROTATION_JERK_BOUND: f64 = T::ROTATION_JERK_BOUND;
+    const TORQUE_BOUND: [f64; N] = T::TORQUE_BOUND;
+    const TORQUE_DOT_BOUND: [f64; N] = T::TORQUE_DOT_BOUND;
 }
 
-impl<const T: JakaType, const N: usize> ArmPreplannedMotionImpl<N> for JakaRobot<T, N>
+impl<T: JakaType, const N: usize> ArmPreplannedMotionImpl<N> for JakaRobot<T, N>
 where
     JakaRobot<T, N>: ArmBehavior<N>,
     [f64; N]: Serialize + for<'a> Deserialize<'a>,
@@ -362,7 +340,7 @@ where
     }
 }
 
-impl<const T: JakaType, const N: usize> ArmPreplannedMotion<N> for JakaRobot<T, N>
+impl<T: JakaType, const N: usize> ArmPreplannedMotion<N> for JakaRobot<T, N>
 where
     JakaRobot<T, N>: ArmBehavior<N>,
     [f64; N]: Serialize + for<'a> Deserialize<'a>,
@@ -401,7 +379,7 @@ impl<const N: usize> ArmStreamingHandle<N> for JakaStreamingHandle<N> {
     }
 }
 
-impl<const T: JakaType, const N: usize> ArmStreamingMotion<N> for JakaRobot<T, N>
+impl<T: JakaType, const N: usize> ArmStreamingMotion<N> for JakaRobot<T, N>
 where
     JakaRobot<T, N>: ArmBehavior<N>,
     [f64; N]: Serialize + for<'a> Deserialize<'a>,
@@ -459,9 +437,9 @@ where
 
 // impl ArmStreamingMotionExt for JakaRobot {}
 
-impl<const T: JakaType, const N: usize> Realtime for JakaRobot<T, N> {}
+impl<T: JakaType, const N: usize> Realtime for JakaRobot<T, N> {}
 
-impl<const T: JakaType, const N: usize> ArmRealtimeControl<N> for JakaRobot<T, N>
+impl<T: JakaType, const N: usize> ArmRealtimeControl<N> for JakaRobot<T, N>
 where
     JakaRobot<T, N>: ArmBehavior<N>,
     [f64; N]: Serialize + for<'a> Deserialize<'a>,
@@ -531,7 +509,7 @@ where
     }
 }
 
-impl<const T: JakaType, const N: usize> ArmRealtimeControlExt<N> for JakaRobot<T, N>
+impl<T: JakaType, const N: usize> ArmRealtimeControlExt<N> for JakaRobot<T, N>
 where
     JakaRobot<T, N>: ArmBehavior<N>,
     [f64; N]: Serialize + for<'a> Deserialize<'a>,

@@ -1,11 +1,8 @@
 use nalgebra as na;
 use std::{f64::consts::PI, sync::Arc, time::Duration};
 
-use libjaka::{JAKA_MINI_DOF, JakaMini2};
-use robot_behavior::{
-    ArmBehavior, ArmPreplannedMotionImpl, ArmRealtimeControl, MotionType, Pose, RobotBehavior,
-    RobotResult,
-};
+use libjaka::JakaMini2;
+use robot_behavior::{MotionType, Pose, RobotResult, behavior::*};
 use std::thread::sleep;
 
 fn main() -> RobotResult<()> {
@@ -42,7 +39,7 @@ fn cone_spiral_curve(
     alpha: f64,
 ) -> (
     f64,
-    Arc<dyn Fn(f64) -> MotionType<JAKA_MINI_DOF> + Send + Sync>,
+    Arc<dyn Fn(f64) -> MotionType<{ JakaMini2::N }> + Send + Sync>,
 ) {
     let r_base = h * theta.tan();
     let n = loops as f64;
@@ -78,7 +75,7 @@ fn compute_point(
     loops: usize,
     r_base: f64,
     alpha: f64,
-) -> MotionType<JAKA_MINI_DOF> {
+) -> MotionType<{ JakaMini2::N }> {
     // 位置计算
     let radius = r_base * t;
     let angle = 2.0 * PI * loops as f64 * t;
