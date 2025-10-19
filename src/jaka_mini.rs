@@ -70,3 +70,7 @@ impl ArmParam<{ _JakaMini2::N }> for _JakaMini2 {
     const TORQUE_BOUND: [f64; Self::N] = [f64::MAX; Self::N];
     const TORQUE_DOT_BOUND: [f64; Self::N] = [f64::MAX; Self::N];
 }
+
+impl RobotFile for JakaMini2 {
+    const URDF: &'static str = "jaka/jaka_minicobo.urdf";
+}

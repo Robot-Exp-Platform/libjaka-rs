@@ -111,7 +111,7 @@ where
     cmd_fn!(_get_tio_vout_param, {Command::GetTioVoutParam};; GetTioVoutParamState);
 }
 
-impl<T: JakaType, const N: usize> RobotBehavior for JakaRobot<T, N>
+impl<T: JakaType, const N: usize> Robot for JakaRobot<T, N>
 where
     [f64; N]: Serialize + for<'a> Deserialize<'a>,
 {
@@ -162,7 +162,7 @@ where
     }
 }
 
-impl<T: JakaType, const N: usize> ArmBehavior<N> for JakaRobot<T, N>
+impl<T: JakaType, const N: usize> Arm<N> for JakaRobot<T, N>
 where
     JakaRobot<T, N>: ArmParam<N>,
     [f64; N]: Serialize + for<'a> Deserialize<'a>,
@@ -182,7 +182,7 @@ where
             pose_ee_to_k: None,
             cartesian_vel: None,
             load: None,
-            tau: None,
+            torque: None,
         };
         Ok(arm_state)
     }
@@ -278,7 +278,7 @@ where
 
 impl<T: JakaType, const N: usize> ArmPreplannedMotionImpl<N> for JakaRobot<T, N>
 where
-    JakaRobot<T, N>: ArmBehavior<N>,
+    JakaRobot<T, N>: Arm<N>,
     [f64; N]: Serialize + for<'a> Deserialize<'a>,
 {
     fn move_joint(&mut self, target: &[f64; N]) -> RobotResult<()> {
@@ -342,7 +342,7 @@ where
 
 impl<T: JakaType, const N: usize> ArmPreplannedMotion<N> for JakaRobot<T, N>
 where
-    JakaRobot<T, N>: ArmBehavior<N>,
+    JakaRobot<T, N>: Arm<N>,
     [f64; N]: Serialize + for<'a> Deserialize<'a>,
 {
     fn move_path(&mut self, _path: Vec<MotionType<N>>) -> RobotResult<()> {
@@ -381,7 +381,7 @@ impl<const N: usize> ArmStreamingHandle<N> for JakaStreamingHandle<N> {
 
 impl<T: JakaType, const N: usize> ArmStreamingMotion<N> for JakaRobot<T, N>
 where
-    JakaRobot<T, N>: ArmBehavior<N>,
+    JakaRobot<T, N>: Arm<N>,
     [f64; N]: Serialize + for<'a> Deserialize<'a>,
 {
     type Handle = JakaStreamingHandle<N>;
@@ -441,7 +441,7 @@ impl<T: JakaType, const N: usize> Realtime for JakaRobot<T, N> {}
 
 impl<T: JakaType, const N: usize> ArmRealtimeControl<N> for JakaRobot<T, N>
 where
-    JakaRobot<T, N>: ArmBehavior<N>,
+    JakaRobot<T, N>: Arm<N>,
     [f64; N]: Serialize + for<'a> Deserialize<'a>,
 {
     fn move_with_closure<FM>(&mut self, mut closure: FM) -> RobotResult<()>
@@ -511,7 +511,7 @@ where
 
 impl<T: JakaType, const N: usize> ArmRealtimeControlExt<N> for JakaRobot<T, N>
 where
-    JakaRobot<T, N>: ArmBehavior<N>,
+    JakaRobot<T, N>: Arm<N>,
     [f64; N]: Serialize + for<'a> Deserialize<'a>,
 {
 }
