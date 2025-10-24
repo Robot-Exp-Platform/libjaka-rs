@@ -1,6 +1,6 @@
 [package]
 name = "libjaka"
-version = "0.1.7"
+version = "0.1.8"
 edition = "2024"
 authors = ["Yixing <yanjizhou312@163.com>"]
 readme = "README.md"
@@ -15,7 +15,7 @@ name = "libjaka"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-robot_behavior = "0.4.8"
+robot_behavior = "0.5.0"
 pyo3 = { version = "0.26", optional = true, features = [
     "extension-module",
     "multiple-pymethods",
