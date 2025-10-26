@@ -15,7 +15,7 @@ impl JakaType for _JakaMini2 {
 }
 
 impl JakaMini2 {
-    /// Create a new JakaRobot instance with the given IP address.
+    /// Create a new `JakaRobot` instance with the given IP address.
     ///
     /// # Arguments
     /// * `ip` - A string slice that holds the IP address of the robot.

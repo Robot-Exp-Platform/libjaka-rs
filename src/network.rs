@@ -25,7 +25,7 @@ impl NetWork {
         S: Default + StateSerde + Send + Sync + 'static,
     {
         let state = Arc::new(RwLock::new(S::default()));
-        
+
         // let ip_owned = ip.to_string();
         // thread::spawn(move || {
         //     let mut tcp_state = TcpStream::connect(format!("{}:{}", ip_owned, PORT_STATE)).unwrap();

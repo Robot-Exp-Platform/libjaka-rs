@@ -303,7 +303,7 @@ where
             joint_position: rad_to_deg(*target),
             speed: self.max_vel.get()[0].to_degrees(),
             accel: self.max_acc.get()[0].to_degrees(),
-            relflag: if coord == Coord::OCS { 0 } else { 1 },
+            relflag: u8::from(coord != Coord::OCS),
         };
         self._joint_move(move_data)?;
 
@@ -331,7 +331,7 @@ where
             cart_position: (*target).into(),
             speed: self.max_vel.get()[0].to_degrees(),
             accel: self.max_acc.get()[0].to_degrees(),
-            relflag: if coord == Coord::OCS { 0 } else { 1 },
+            relflag: u8::from(coord != Coord::OCS),
         };
         self._move_l(move_data)?;
 

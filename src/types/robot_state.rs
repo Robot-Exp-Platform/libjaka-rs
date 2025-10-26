@@ -140,7 +140,7 @@ where
     fn state_to_string(&self) -> String {
         let data = self
             .iter()
-            .map(|x| x.state_to_string())
+            .map(StateSerde::state_to_string)
             .collect::<Vec<String>>()
             .join(",");
         format!("({data})")
@@ -169,7 +169,7 @@ impl StateSerde for RobotState {
             let (key, value) = part.split_once(':').unwrap();
             match key {
                 "joint_actual_position" => {
-                    state.joint_actual_position = <[f64; 9]>::state_from_str(value)
+                    state.joint_actual_position = <[f64; 9]>::state_from_str(value);
                 }
                 "actual_position" => state.actual_position = <[f64; 9]>::state_from_str(value),
                 "din" => state.din = BigArray::<bool, 64>::state_from_str(value),
@@ -191,7 +191,7 @@ impl StateSerde for RobotState {
                 "on_soft_limit" => state.on_soft_limit = <[bool; 1]>::state_from_str(value),
                 "emergency_stop" => state.emergency_stop = <[bool; 1]>::state_from_str(value),
                 "drag_near_limit" => {
-                    state.drag_near_limit = <[[bool; 6]; 1]>::state_from_str(value)
+                    state.drag_near_limit = <[[bool; 6]; 1]>::state_from_str(value);
                 }
                 _ => (),
             }
@@ -238,7 +238,7 @@ mod tests {
 
     #[test]
     fn test_state_serde() {
-        let state_str = r#"joint_actual_position:(0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0)
+        let state_str = r"joint_actual_position:(0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0)
 actual_position:(0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0)
 din:(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
 dout:(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
@@ -258,7 +258,7 @@ current_tool_id:(0)
 protective_stop:(0)
 on_soft_limit:(0)
 emergency_stop:(0)
-drag_near_limit:((0,0,0,0,0,0))"#;
+drag_near_limit:((0,0,0,0,0,0))";
 
         let _ = RobotState::state_from_str(state_str);
     }
