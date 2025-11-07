@@ -778,6 +778,16 @@ pub struct GetTioVoutParamState {
     pub tio_vout_vol: u8,
 }
 
+pub enum TioVoutMode {
+    V12V,
+    V24V,
+}
+
+pub enum TioVout {
+    Enable(TioVoutMode),
+    Disable,
+}
+
 impl From<DefaultState> for RobotResult<()> {
     fn from(state: DefaultState) -> Self {
         if state.error_code == "0" {

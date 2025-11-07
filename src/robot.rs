@@ -109,6 +109,39 @@ where
     cmd_fn!(_get_tcp_pos, {Command::GetTcpPos};; GetTcpPosState);
     cmd_fn!(_set_tio_vout_param, {Command::SetTioVoutParam}; data: SetTioVoutParamData; SetTioVoutParamState);
     cmd_fn!(_get_tio_vout_param, {Command::GetTioVoutParam};; GetTioVoutParamState);
+
+    pub fn set_tio_vout(&mut self, tio: TioVout) -> RobotResult<()> {
+        let data = match tio {
+            TioVout::Enable(mode) => match mode {
+                TioVoutMode::V12V => SetTioVoutParamData { tio_vout_ena: 1, tio_vout_vol: 0 },
+                TioVoutMode::V24V => SetTioVoutParamData { tio_vout_ena: 1, tio_vout_vol: 1 },
+            },
+            TioVout::Disable => SetTioVoutParamData { tio_vout_ena: 0, tio_vout_vol: 0 },
+        };
+        self._set_tio_vout_param(data)?.into()
+    }
+
+    pub fn get_tio_vout(&mut self) -> RobotResult<TioVout> {
+        let state = self._get_tio_vout_param()?;
+        let tio = match state.tio_vout_ena {
+            0 => TioVout::Disable,
+            1 => match state.tio_vout_vol {
+                0 => TioVout::Enable(TioVoutMode::V12V),
+                1 => TioVout::Enable(TioVoutMode::V24V),
+                _ => {
+                    return Err(RobotException::CommandException(
+                        "Invalid TIO VOUT voltage".to_string(),
+                    ));
+                }
+            },
+            _ => {
+                return Err(RobotException::CommandException(
+                    "Invalid TIO VOUT enable status".to_string(),
+                ));
+            }
+        };
+        Ok(tio)
+    }
 }
 
 impl<T: JakaType, const N: usize> Robot for JakaRobot<T, N>
@@ -170,10 +203,12 @@ where
     fn state(&mut self) -> RobotResult<ArmState<N>> {
         let data = self._get_data()?;
         let joint: [f64; N] = data.joint_actual_position[..N].try_into().unwrap();
-        let pose_o_to_ee = Pose::Euler(
-            data.actual_position[0..3].try_into().unwrap(),
-            data.actual_position[3..6].try_into().unwrap(),
-        );
+        let joint = joint.map(|f| f.to_radians());
+
+        let cartesian_tran = data.actual_position[0..3].try_into().unwrap();
+        let cartesian_rot: [f64; 3] = data.actual_position[3..6].try_into().unwrap();
+        let cartesian_rot = cartesian_rot.map(|f| f.to_radians());
+        let pose_o_to_ee = Pose::Euler(cartesian_tran, cartesian_rot);
         let arm_state = ArmState {
             joint: Some(joint),
             joint_vel: None,
@@ -187,10 +222,7 @@ where
         Ok(arm_state)
     }
     fn set_load(&mut self, load: LoadState) -> RobotResult<()> {
-        let set_load_data = SetPayloadData {
-            mass: load.m,
-            centroid: load.x,
-        };
+        let set_load_data = SetPayloadData { mass: load.m, centroid: load.x };
         self._set_payload(set_load_data)?.into()
     }
     fn set_coord(&mut self, coord: Coord) -> RobotResult<()> {
@@ -259,7 +291,6 @@ impl<T: JakaType, const N: usize> ArmParam<N> for JakaRobot<T, N>
 where
     T: ArmParam<N>,
 {
-    const DH: [[f64; 4]; N] = T::DH;
     const JOINT_DEFAULT: [f64; N] = T::JOINT_DEFAULT;
     const JOINT_MIN: [f64; N] = T::JOINT_MIN;
     const JOINT_MAX: [f64; N] = T::JOINT_MAX;
@@ -474,17 +505,11 @@ where
 
             match motion {
                 MotionType::Joint(joint) => {
-                    let data = ServoJData::<N> {
-                        joint_angles: rad_to_deg(joint),
-                        relflag: 0,
-                    };
+                    let data = ServoJData::<N> { joint_angles: rad_to_deg(joint), relflag: 0 };
                     self._servo_j(data)?;
                 }
                 MotionType::Cartesian(pose) => {
-                    let data = ServoPData {
-                        cat_position: pose.into(),
-                        relflag: 0,
-                    };
+                    let data = ServoPData { cat_position: pose.into(), relflag: 0 };
                     self._servo_p(data)?;
                 }
                 _ => {
