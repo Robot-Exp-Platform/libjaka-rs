@@ -144,6 +144,36 @@ where
     }
 }
 
+impl<T: JakaType, const N: usize> JakaRobot<T, N>
+where
+    JakaRobot<T, N>: ArmParam<N> + Arm<N>,
+{
+    /// Create a new `JakaRobot` instance with the given IP address.
+    ///
+    /// # Arguments
+    /// * `ip` - A string slice that holds the IP address of the robot.
+    pub fn new(ip: &str) -> Self {
+        let network = NetWork::new(ip);
+        let robot_state = NetWork::state_connect(ip);
+        let mut robot = Self {
+            marker: PhantomData,
+            network,
+            robot_state,
+            streaming_handle: thread::spawn(|| {}),
+            is_moving: false,
+            coord: OverrideOnce::new(Coord::OCS),
+            max_vel: OverrideOnce::new(Self::JOINT_VEL_BOUND),
+            max_acc: OverrideOnce::new(Self::JOINT_ACC_BOUND),
+            max_cartesian_vel: OverrideOnce::new(Self::CARTESIAN_VEL_BOUND),
+            max_cartesian_acc: OverrideOnce::new(Self::CARTESIAN_ACC_BOUND),
+            max_rotation_vel: OverrideOnce::new(Self::ROTATION_VEL_BOUND),
+            max_rotation_acc: OverrideOnce::new(Self::ROTATION_ACC_BOUND),
+        };
+        let _ = robot.set_speed(0.05);
+        robot
+    }
+}
+
 impl<T: JakaType, const N: usize> Robot for JakaRobot<T, N>
 where
     [f64; N]: Serialize + for<'a> Deserialize<'a>,
@@ -287,27 +317,7 @@ where
     }
 }
 
-impl<T: JakaType, const N: usize> ArmParam<N> for JakaRobot<T, N>
-where
-    T: ArmParam<N>,
-{
-    const JOINT_DEFAULT: [f64; N] = T::JOINT_DEFAULT;
-    const JOINT_MIN: [f64; N] = T::JOINT_MIN;
-    const JOINT_MAX: [f64; N] = T::JOINT_MAX;
-    const JOINT_VEL_BOUND: [f64; N] = T::JOINT_VEL_BOUND;
-    const JOINT_ACC_BOUND: [f64; N] = T::JOINT_ACC_BOUND;
-    const JOINT_JERK_BOUND: [f64; N] = T::JOINT_JERK_BOUND;
-    const CARTESIAN_VEL_BOUND: f64 = T::CARTESIAN_VEL_BOUND;
-    const CARTESIAN_ACC_BOUND: f64 = T::CARTESIAN_ACC_BOUND;
-    const CARTESIAN_JERK_BOUND: f64 = T::CARTESIAN_JERK_BOUND;
-    const ROTATION_VEL_BOUND: f64 = T::ROTATION_VEL_BOUND;
-    const ROTATION_ACC_BOUND: f64 = T::ROTATION_ACC_BOUND;
-    const ROTATION_JERK_BOUND: f64 = T::ROTATION_JERK_BOUND;
-    const TORQUE_BOUND: [f64; N] = T::TORQUE_BOUND;
-    const TORQUE_DOT_BOUND: [f64; N] = T::TORQUE_DOT_BOUND;
-}
-
-impl<T: JakaType, const N: usize> ArmPreplannedMotionImpl<N> for JakaRobot<T, N>
+impl<T: JakaType, const N: usize> ArmPreplannedMotion<N> for JakaRobot<T, N>
 where
     JakaRobot<T, N>: Arm<N>,
     [f64; N]: Serialize + for<'a> Deserialize<'a>,
@@ -368,25 +378,6 @@ where
 
         self.is_moving = false;
         Ok(())
-    }
-}
-
-impl<T: JakaType, const N: usize> ArmPreplannedMotion<N> for JakaRobot<T, N>
-where
-    JakaRobot<T, N>: Arm<N>,
-    [f64; N]: Serialize + for<'a> Deserialize<'a>,
-{
-    fn move_path(&mut self, _path: Vec<MotionType<N>>) -> RobotResult<()> {
-        unimplemented!()
-    }
-    fn move_path_async(&mut self, _path: Vec<MotionType<N>>) -> RobotResult<()> {
-        unimplemented!()
-    }
-    fn move_path_prepare(&mut self, _path: Vec<MotionType<N>>) -> RobotResult<()> {
-        unimplemented!()
-    }
-    fn move_path_start(&mut self, _start: MotionType<N>) -> RobotResult<()> {
-        unimplemented!()
     }
 }
 

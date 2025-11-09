@@ -276,52 +276,32 @@ pub struct ServoPData {
 pub type GetDataRequest = Request<{ Command::GetData }, ()>;
 pub type GetDataResponse = Response<{ Command::GetData }, GetDataState>;
 
-#[serde_as]
 #[derive(Serialize, Deserialize)]
 pub struct GetDataState {
     pub len: u16,
     pub joint_actual_position: [f64; 6],
     pub drag_status: bool,
     pub actual_position: [f64; 6],
-    #[serde_as(as = "[_; 199]")]
-    pub din: [u8; 199],
-    #[serde_as(as = "[_; 199]")]
-    pub dout: [u8; 199],
-    #[serde_as(as = "[_; 128]")]
-    pub ain: [f64; 128],
-    #[serde_as(as = "[_; 128]")]
-    pub aout: [f64; 128],
-    pub tio_din: [u8; 8],
-    #[serde_as(as = "[_; 8]")]
-    pub tio_dout: [u8; 8],
-    #[serde_as(as = "[_; 2]")]
-    pub tio_ain: [f64; 2],
-    #[serde_as(as = "[_; 2]")]
-    pub relay_io: [u8; 2],
-    #[serde_as(as = "[_; 128]")]
-    pub mb_slave_din: [u8; 128],
-    #[serde_as(as = "[_; 128]")]
-    pub mb_slave_dout: [u8; 128],
-    #[serde_as(as = "[_; 64]")]
-    pub mb_slave_ain: [f64; 64],
-    #[serde_as(as = "[_; 64]")]
-    pub mb_slave_aout: [f64; 64],
-    #[serde_as(as = "[_; 64]")]
-    pub pn_dev_din: [u8; 64],
-    #[serde_as(as = "[_; 64]")]
-    pub pn_dev_dout: [u8; 64],
-    #[serde_as(as = "[_; 64]")]
-    pub pn_dev_ain: [f64; 64],
-    #[serde_as(as = "[_; 64]")]
-    pub pn_dev_aout: [f64; 64],
-    #[serde_as(as = "[_; 64]")]
-    pub eip_adpt_din: [u8; 64],
-    #[serde_as(as = "[_; 64]")]
-    pub eip_adpt_dout: [u8; 64],
-    #[serde_as(as = "[_; 48]")]
-    pub eip_adpt_ain: [f64; 48],
-    #[serde_as(as = "[_; 48]")]
-    pub eip_adpt_aout: [f64; 48],
+    pub din: Vec<u8>,
+    pub dout: Vec<u8>,
+    pub ain: Vec<f64>,
+    pub aout: Vec<f64>,
+    pub tio_din: Vec<u8>,
+    pub tio_dout: Vec<u8>,
+    pub tio_ain: Vec<f64>,
+    pub relay_io: Vec<u8>,
+    pub mb_slave_din: Vec<u8>,
+    pub mb_slave_dout: Vec<u8>,
+    pub mb_slave_ain: Vec<f64>,
+    pub mb_slave_aout: Vec<f64>,
+    pub pn_dev_din: Vec<u8>,
+    pub pn_dev_dout: Vec<u8>,
+    pub pn_dev_ain: Vec<f64>,
+    pub pn_dev_aout: Vec<f64>,
+    pub eip_adpt_din: Vec<u8>,
+    pub eip_adpt_dout: Vec<u8>,
+    pub eip_adpt_ain: Vec<f64>,
+    pub eip_adpt_aout: Vec<f64>,
     pub task_state: u8,
     pub homed: [u8; 9],
     pub task_mode: u8,

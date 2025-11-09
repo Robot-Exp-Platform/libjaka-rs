@@ -4,13 +4,13 @@
 
 #[cfg(feature = "ffi")]
 pub mod ffi;
-mod jaka_mini;
+mod jaka;
 pub(crate) mod network;
 mod params;
 mod robot;
 pub mod types;
 
-pub use jaka_mini::*;
+pub use jaka::*;
 pub use params::*;
 pub use robot::*;
 

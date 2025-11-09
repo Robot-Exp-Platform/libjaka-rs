@@ -1,10 +1,10 @@
 // use std::{thread::sleep, time::Duration};
 
-use libjaka::JakaRobot;
+use libjaka::JakaMini2;
 use robot_behavior::{Pose, RobotResult, behavior::*};
 
 fn main() -> RobotResult<()> {
-    let mut robot = JakaRobot::new("10.5.5.100");
+    let mut robot = JakaMini2::new("10.5.5.100");
     robot.enable()?;
     robot._stop_program()?;
     // robot.move_joint_async(&[0.0; 6], 100.0)?;
