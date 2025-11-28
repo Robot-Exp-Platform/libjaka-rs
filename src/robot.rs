@@ -1,8 +1,15 @@
 use crate::{JAKA_FREQUENCY, JAKA_VERSION, network::NetWork, types::*};
 
 use robot_behavior::{
-    ArmDOF, ArmState, ControlType, Coord, LoadState, MotionType, OverrideOnce, Pose, Realtime,
-    RobotException, RobotResult, behavior::*, utils::rad_to_deg,
+    ArmDOF, ArmPreplannedPath, ArmState, ControlType, Coord, LoadState, MotionType, OverrideOnce,
+    Pose, Realtime, RobotException, RobotResult, behavior::*, utils::rad_to_deg,
+};
+use rsruckig::{
+    error::ThrowErrorHandler,
+    prelude::{InputParameter, OutputParameter},
+    result::RuckigResult,
+    ruckig::Ruckig,
+    util::DataArrayOrVec,
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -30,6 +37,7 @@ pub struct JakaRobot<T: JakaType, const N: usize> {
     pub(crate) max_cartesian_acc: OverrideOnce<f64>,
     pub(crate) max_rotation_vel: OverrideOnce<f64>,
     pub(crate) max_rotation_acc: OverrideOnce<f64>,
+    pub path: Option<Vec<MotionType<N>>>,
 }
 
 impl<T: JakaType, const N: usize> ArmDOF for JakaRobot<T, N> {
@@ -168,6 +176,7 @@ where
             max_cartesian_acc: OverrideOnce::new(Self::CARTESIAN_ACC_BOUND),
             max_rotation_vel: OverrideOnce::new(Self::ROTATION_VEL_BOUND),
             max_rotation_acc: OverrideOnce::new(Self::ROTATION_ACC_BOUND),
+            path: None,
         };
         let _ = robot.set_speed(0.05);
         robot
@@ -377,6 +386,123 @@ where
         self._move_l(move_data)?;
 
         self.is_moving = false;
+        Ok(())
+    }
+}
+
+impl<T: JakaType, const N: usize> ArmPreplannedPath<N> for JakaRobot<T, N>
+where
+    JakaRobot<T, N>: Arm<N>,
+    JakaRobot<T, N>: ArmParam<N>,
+    [f64; N]: Serialize + for<'a> Deserialize<'a>,
+{
+    fn move_traj(&mut self, path: Vec<MotionType<N>>) -> RobotResult<()> {
+        self.move_traj_async(path)?;
+
+        while self.is_moving() {
+            sleep(Duration::from_millis(100));
+        }
+
+        Ok(())
+    }
+
+    fn move_traj_async(&mut self, path: Vec<MotionType<N>>) -> RobotResult<()> {
+        let mut path_iter = path.into_iter();
+        self.move_with_closure(move |_, _| {
+            if let Some(motion) = path_iter.next() {
+                (motion, false)
+            } else {
+                (MotionType::Joint([0.0; N]), true)
+            }
+        })
+    }
+    fn move_waypoints(&mut self, path: Vec<MotionType<N>>) -> RobotResult<()> {
+        self.move_waypoints_async(path)?;
+
+        while self.is_moving() {
+            sleep(Duration::from_millis(100));
+        }
+
+        Ok(())
+    }
+    fn move_waypoints_async(&mut self, path: Vec<MotionType<N>>) -> RobotResult<()> {
+        match path.first() {
+            Some(MotionType::Joint(first)) => {
+                let mut ruckig = Ruckig::<N, ThrowErrorHandler>::new(None, 1. / JAKA_FREQUENCY);
+
+                let mut input = InputParameter::new(None);
+                let mut output = OutputParameter::new(None);
+
+                input.max_velocity = DataArrayOrVec::Stack(Self::JOINT_VEL_BOUND);
+                input.max_acceleration = DataArrayOrVec::Stack(Self::JOINT_ACC_BOUND);
+
+                input.current_position = DataArrayOrVec::Stack(*first);
+
+                let mut new_path: Vec<MotionType<N>> = Vec::new();
+
+                for target in path {
+                    if let MotionType::Joint(joint) = target {
+                        // 设置当前段的目标
+                        input.target_position = DataArrayOrVec::Stack(joint);
+                        // input.target_velocity = vel; // 通常中间点速度不为0才能平滑过渡，这里需要根据路径策略计算
+                        // 如果希望过点不停车，target_velocity 需要预先根据几何路径计算好方向
+
+                        // 进入实时控制循环
+                        loop {
+                            // 计算下一帧
+                            let result = ruckig.update(&input, &mut output);
+
+                            // 发送 output.new_position 给电机
+                            // 发送 output.new_velocity 给电机 (如果是前馈控制)
+
+                            // **关键**：将输出作为下一次的输入
+                            input.current_position = output.new_position.clone();
+                            input.current_velocity = output.new_velocity.clone();
+                            input.current_acceleration = output.new_acceleration.clone();
+
+                            new_path
+                                .push(MotionType::Joint(*output.new_position.as_array().unwrap()));
+
+                            if let Ok(RuckigResult::Finished) = result {
+                                break; // 到达当前中间点，进入下一个
+                            }
+                        }
+                    } else {
+                        return Err(RobotException::CommandException(
+                            "Only joint waypoints are supported".to_string(),
+                        ));
+                    }
+                }
+
+                self.move_traj_async(new_path)?;
+            }
+            _ => {
+                return Err(RobotException::CommandException(
+                    "Only joint waypoints are supported".to_string(),
+                ));
+            }
+        }
+
+        Ok(())
+    }
+
+    fn move_waypoints_prepare(&mut self, path: Vec<MotionType<N>>) -> RobotResult<()> {
+        self.path = Some(path);
+        Ok(())
+    }
+    fn move_waypoints_start(&mut self, _: MotionType<N>) -> RobotResult<()> {
+        if let Some(path) = self.path.take() {
+            if path.is_empty() {
+                return Err(RobotException::CommandException(
+                    "Path is empty".to_string(),
+                ));
+            }
+            self.move_waypoints_async(path)?;
+        } else {
+            return Err(RobotException::CommandException(
+                "Path is not prepared".to_string(),
+            ));
+        }
         Ok(())
     }
 }
