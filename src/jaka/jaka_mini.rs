@@ -1,4 +1,4 @@
-use robot_behavior::{ArmParam, behavior::*};
+use robot_behavior::{ArmParam, DhParam, behavior::*};
 use std::f64::consts::{FRAC_PI_2, FRAC_PI_3, PI};
 
 use crate::{JakaRobot, JakaType};
@@ -70,7 +70,7 @@ impl ArmForwardKinematics<{ _JakaMini2::N }> for JakaMini2 {
     const DH: [robot_behavior::DhParam; _JakaMini2::N] = [
         DhParam::DH { theta: 0., d: 0.187, r: 0., alpha: FRAC_PI_2 },
         DhParam::DH { theta: 0., d: 0., r: 0.210, alpha: 0. },
-        DhParam::DH { theta: 0., d: 0., r: 0., alpha: -FRAC_PI_2},
+        DhParam::DH { theta: 0., d: 0., r: 0., alpha: -FRAC_PI_2 },
         DhParam::DH { theta: 0., d: 0.2105, r: 0., alpha: FRAC_PI_2 },
         DhParam::DH { theta: 0., d: 0., r: 0., alpha: -FRAC_PI_2 },
         DhParam::DH { theta: 0., d: 0.1593, r: 0.006, alpha: 0. },
