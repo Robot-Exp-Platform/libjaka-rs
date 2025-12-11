@@ -66,6 +66,17 @@ impl ArmParam<{ _JakaMini2::N }> for JakaMini2 {
     const TORQUE_DOT_BOUND: [f64; Self::N] = [f64::MAX; Self::N];
 }
 
+impl ArmForwardKinematics<{ _JakaMini2::N }> for JakaMini2 {
+    const DH: [robot_behavior::DhParam; _JakaMini2::N] = [
+        DhParam::DH { theta: 0., d: 0.187, r: 0., alpha: FRAC_PI_2 },
+        DhParam::DH { theta: 0., d: 0., r: 0.210, alpha: 0. },
+        DhParam::DH { theta: 0., d: 0., r: 0., alpha: -FRAC_PI_2},
+        DhParam::DH { theta: 0., d: 0.2105, r: 0., alpha: FRAC_PI_2 },
+        DhParam::DH { theta: 0., d: 0., r: 0., alpha: -FRAC_PI_2 },
+        DhParam::DH { theta: 0., d: 0.1593, r: 0.006, alpha: 0. },
+    ];
+}
+
 impl RobotFile for JakaMini2 {
     const URDF: &'static str = "jaka/jaka_minicobo.urdf";
 }
