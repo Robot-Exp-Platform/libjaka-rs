@@ -178,7 +178,7 @@ where
             max_rotation_acc: OverrideOnce::new(Self::ROTATION_ACC_BOUND),
             path: None,
         };
-        let _ = robot.set_speed(0.05);
+        let _ = robot.set_scale(0.05);
         robot
     }
 }
@@ -204,11 +204,18 @@ where
     fn disable(&mut self) -> RobotResult<()> {
         self._disable()?.into()
     }
-    fn is_moving(&mut self) -> bool {
+    fn is_moving(&mut self) -> RobotResult<bool> {
         if self.is_moving {
             self.is_moving = self._get_data().unwrap().curr_tcp_trans_vel > 0.1;
         }
-        self.is_moving
+        Ok(self.is_moving)
+    }
+
+    fn waiting_for_finish(&mut self) -> RobotResult<()> {
+        while self.is_moving()? {
+            sleep(Duration::from_millis(100));
+        }
+        Ok(())
     }
     fn reset(&mut self) -> RobotResult<()> {
         unimplemented!()
@@ -268,13 +275,13 @@ where
         self.coord.set(coord);
         Ok(())
     }
-    fn set_speed(&mut self, speed: f64) -> RobotResult<()> {
-        self.max_vel.set(Self::JOINT_VEL_BOUND.map(|v| v * speed));
-        self.max_acc.set(Self::JOINT_ACC_BOUND.map(|v| v * speed));
+    fn set_scale(&mut self, scale: f64) -> RobotResult<()> {
+        self.max_vel.set(Self::JOINT_VEL_BOUND.map(|v| v * scale));
+        self.max_acc.set(Self::JOINT_ACC_BOUND.map(|v| v * scale));
         self.max_cartesian_vel
-            .set(Self::CARTESIAN_VEL_BOUND * speed);
+            .set(Self::CARTESIAN_VEL_BOUND * scale);
         self.max_cartesian_acc
-            .set(Self::CARTESIAN_ACC_BOUND * speed);
+            .set(Self::CARTESIAN_ACC_BOUND * scale);
         Ok(())
     }
 
@@ -282,13 +289,13 @@ where
         self.coord.once(coord);
         self
     }
-    fn with_speed(&mut self, speed: f64) -> &mut Self {
-        self.max_vel.once(Self::JOINT_VEL_BOUND.map(|v| v * speed));
-        self.max_acc.once(Self::JOINT_ACC_BOUND.map(|v| v * speed));
+    fn with_scale(&mut self, scale: f64) -> &mut Self {
+        self.max_vel.once(Self::JOINT_VEL_BOUND.map(|v| v * scale));
+        self.max_acc.once(Self::JOINT_ACC_BOUND.map(|v| v * scale));
         self.max_cartesian_vel
-            .once(Self::CARTESIAN_VEL_BOUND * speed);
+            .once(Self::CARTESIAN_VEL_BOUND * scale);
         self.max_cartesian_acc
-            .once(Self::CARTESIAN_ACC_BOUND * speed);
+            .once(Self::CARTESIAN_ACC_BOUND * scale);
         self
     }
     fn with_velocity(&mut self, joint_vel: &[f64; N]) -> &mut Self {
@@ -334,9 +341,7 @@ where
     fn move_joint(&mut self, target: &[f64; N]) -> RobotResult<()> {
         self.move_joint_async(target)?;
 
-        while self.is_moving() {
-            sleep(Duration::from_millis(100));
-        }
+        self.waiting_for_finish()?;
 
         Ok(())
     }
@@ -362,9 +367,7 @@ where
     fn move_cartesian(&mut self, target: &Pose) -> RobotResult<()> {
         self.move_cartesian_async(target)?;
 
-        while self.is_moving() {
-            sleep(Duration::from_millis(100));
-        }
+        self.waiting_for_finish()?;
 
         Ok(())
     }
@@ -399,9 +402,7 @@ where
     fn move_traj(&mut self, path: Vec<MotionType<N>>) -> RobotResult<()> {
         self.move_traj_async(path)?;
 
-        while self.is_moving() {
-            sleep(Duration::from_millis(100));
-        }
+        self.waiting_for_finish()?;
 
         Ok(())
     }
@@ -419,9 +420,7 @@ where
     fn move_waypoints(&mut self, path: Vec<MotionType<N>>) -> RobotResult<()> {
         self.move_waypoints_async(path)?;
 
-        while self.is_moving() {
-            sleep(Duration::from_millis(100));
-        }
+        self.waiting_for_finish()?;
 
         Ok(())
     }

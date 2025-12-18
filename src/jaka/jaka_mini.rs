@@ -68,15 +68,29 @@ impl ArmParam<{ _JakaMini2::N }> for JakaMini2 {
 
 impl ArmForwardKinematics<{ _JakaMini2::N }> for JakaMini2 {
     const DH: [robot_behavior::DhParam; _JakaMini2::N] = [
-        DhParam::DH { theta: 0., d: 0.187, r: 0., alpha: 0. },
-        DhParam::DH { theta: 0., d: 0.006, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0., r: 0.210, alpha: 0. },
-        DhParam::DH { theta: 0., d: 0.2105, r: 0., alpha: -FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0., r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0.1593, r: 0.0, alpha: -FRAC_PI_2 },
+        DhParam::Iso3RPY { pos: [0., 0., 0.187], rpy: [0.; 3] },
+        DhParam::Iso3RPY { pos: [0., -0.006, 0.], rpy: [FRAC_PI_2, -FRAC_PI_2, 0.] },
+        DhParam::Iso3RPY { pos: [0.21, 0., 0.], rpy: [0., 0., -FRAC_PI_2] },
+        DhParam::Iso3RPY { pos: [0., 0.2105, 0.], rpy: [-FRAC_PI_2, 0., 0.] },
+        DhParam::Iso3RPY { pos: [0., 0., 0.], rpy: [FRAC_PI_2, 0., 0.] },
+        DhParam::Iso3RPY { pos: [0., 0.1593, 0.], rpy: [-FRAC_PI_2, 0., 0.] },
     ];
 }
 
 impl RobotFile for JakaMini2 {
     const URDF: &'static str = "jaka/jaka_minicobo.urdf";
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_kine() {
+        let cache = JakaMini2::kine_cache(&[0.; 6], &[0.; 6]);
+
+        let pose = cache.end_effector_pose();
+
+        println!("pose: {:?}", pose);
+    }
 }
