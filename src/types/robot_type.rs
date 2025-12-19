@@ -758,11 +758,13 @@ pub struct GetTioVoutParamState {
     pub tio_vout_vol: u8,
 }
 
+#[derive(Debug, Clone, Copy)]
 pub enum TioVoutMode {
     V12V,
     V24V,
 }
 
+#[derive(Debug, Clone, Copy)]
 pub enum TioVout {
     Enable(TioVoutMode),
     Disable,

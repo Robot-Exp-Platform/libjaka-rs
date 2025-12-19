@@ -6,7 +6,7 @@ use robot_behavior::{Pose, RobotResult, behavior::*};
 fn main() -> RobotResult<()> {
     let mut robot = JakaMini2::new("10.5.5.100");
     robot.enable()?;
-    robot._stop_program()?;
+    robot.robot_impl._stop_program()?;
     // robot.move_joint_async(&[0.0; 6], 100.0)?;
     // robot.move_joint_async(&[-90., -30., -90., 0., -30., 0.], 100.0)?;
     robot

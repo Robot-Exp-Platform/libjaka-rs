@@ -1,4 +1,4 @@
-use crate::{JAKA_FREQUENCY, JAKA_VERSION, network::NetWork, types::*};
+use crate::{JAKA_FREQUENCY, JAKA_VERSION, network::NetWork, robot_impl::RobotImpl, types::*};
 
 use robot_behavior::{
     ArmDOF, ArmPreplannedPath, ArmState, ControlType, Coord, LoadState, MotionType, OverrideOnce,
@@ -24,9 +24,10 @@ pub trait JakaType {
 }
 
 /// # Jaja Robot (节卡机器人)
+///
 pub struct JakaRobot<T: JakaType, const N: usize> {
     pub(crate) marker: PhantomData<T>,
-    pub(crate) network: NetWork,
+    pub robot_impl: RobotImpl<N>,
     pub(crate) robot_state: Arc<RwLock<RobotState>>,
     pub(crate) streaming_handle: thread::JoinHandle<()>,
     pub(crate) is_moving: bool,
@@ -44,80 +45,10 @@ impl<T: JakaType, const N: usize> ArmDOF for JakaRobot<T, N> {
     const N: usize = N;
 }
 
-macro_rules! cmd_fn {
-    ($fn_name:ident, $command:expr; $arg_name:ident: $arg_type:ty; $ret_type:ty) => {
-        pub fn $fn_name(&mut self, arg: $arg_type) -> RobotResult<$ret_type> {
-            let response: Response<$command, $ret_type> =
-                self.network
-                    .send_and_recv(Request::<$command, $arg_type>::from(arg))?;
-            Ok(response.state)
-        }
-    };
-    ($fn_name:ident, $command:expr;; $ret_type:ty) => {
-        pub fn $fn_name(&mut self) -> RobotResult<$ret_type> {
-            let response: Response<$command, $ret_type> =
-                self.network
-                    .send_and_recv(Request::<$command, ()>::from(()))?;
-            Ok(response.state)
-        }
-    };
-}
-
 impl<T: JakaType, const N: usize> JakaRobot<T, N>
 where
     [f64; N]: Serialize + for<'a> Deserialize<'a>,
 {
-    cmd_fn!(_power_on, {Command::PowerOn};; PowerOnState);
-    cmd_fn!(_power_off, {Command::PowerOff};; PowerOffState);
-    cmd_fn!(_enable, {Command::EnableRobot};; EnableRobotState);
-    cmd_fn!(_joint_move, {Command::JointMove}; data: JointMoveData::<N>; JointMoveState);
-    cmd_fn!(_end_move, {Command::EndMove};data: EndMoveData::<N>; EndMoveState);
-    cmd_fn!(_shutdown, {Command::Shutdown};; ShutdownState);
-    cmd_fn!(_quit, {Command::Quit};; QuitState);
-    cmd_fn!(_get_robot_state, {Command::GetRobotState};; GetRobotStateState);
-    cmd_fn!(_disable, {Command::DisableRobot};; DisableRobotState);
-    cmd_fn!(_torque_control_enable, {Command::TorqueControlEnable};; TorqueControlEnableState);
-    cmd_fn!(_torque_feedforward, {Command::TorqueFeedforward}; data: TorqueFeedforwardData; TorqueFeedforwardState);
-    cmd_fn!(_servo_move, {Command::ServoMove}; data: ServoMoveData; ServoMoveState);
-    cmd_fn!(_servo_j, {Command::ServoJ}; data: ServoJData::<N>; ServoJState);
-    cmd_fn!(_servo_p, {Command::ServoP}; data: ServoPData; ServoPState);
-    cmd_fn!(_get_data, {Command::GetData};; GetDataState);
-    cmd_fn!(_rapid_rate, {Command::RapidRate}; data: RapidRateData; RapidRateState);
-    cmd_fn!(_load_program, {Command::LoadProgram}; data: LoadProgramData; LoadProgramState);
-    cmd_fn!(_get_loaded_program, {Command::GetLoadedProgram};; GetLoadedProgramState);
-    cmd_fn!(_play_program, {Command::PlayProgram};; PlayProgramState);
-    cmd_fn!(_pause_program, {Command::PauseProgram};; PauseProgramState);
-    cmd_fn!(_resume_program, {Command::ResumeProgram};; ResumeProgramState);
-    cmd_fn!(_stop_program, {Command::StopProgram};; StopProgramState);
-    cmd_fn!(_get_program_state, {Command::GetProgramState};; GetProgramStateState);
-    cmd_fn!(_set_digital_output, {Command::SetDigitalOutput}; data: SetDigitalOutputData; SetDigitalOutputState);
-    cmd_fn!(_get_digital_input_status, {Command::GetDigitalInputStatus};; GetDigitalInputStatusState);
-    cmd_fn!(_set_analog_output, {Command::SetAnalogOutput}; data: SetAnalogOutputData; SetAnalogOutputState);
-    cmd_fn!(_set_tool_offsets, {Command::SetToolOffsets}; data: SetToolOffsetsData; SetToolOffsetsState);
-    cmd_fn!(_set_tool_id, {Command::SetToolId}; data: SetToolIdData; SetToolIdState);
-    cmd_fn!(_set_user_offsets, {Command::SetUserOffsets}; data: SetUserOffsetsData; SetUserOffsetsState);
-    cmd_fn!(_set_user_id, {Command::SetUserId}; data: SetUserIdData; SetUserIdState);
-    cmd_fn!(_get_extio_status, {Command::GetExtioStatus};; GetExtioStatusState);
-    cmd_fn!(_get_funcdi_status, {Command::GetFuncdiStatus};; GetFuncdiStatusState);
-    cmd_fn!(_drag_status, {Command::DragStatus};; DragStatusState);
-    cmd_fn!(_query_user_defined_variable, {Command::QueryUserDefinedVariable};; QueryUserDefinedVariableState);
-    cmd_fn!(_modify_user_defined_variable, {Command::ModifyUserDefinedVariable}; data: ModifyUserDefinedVariableData; ModifyUserDefinedVariableState);
-    cmd_fn!(_protective_stop_status, {Command::ProtectiveStopStatus};; ProtectiveStopStatusState);
-    cmd_fn!(_jog, {Command::Jog}; data: JogData; JogState);
-    cmd_fn!(_move_l, {Command::MoveL}; data: MoveLData; MoveLState);
-    cmd_fn!(_wait_complete, {Command::WaitComplete};; WaitCompleteState);
-    cmd_fn!(_set_payload, {Command::SetPayload}; data: SetPayloadData; SetPayloadState);
-    cmd_fn!(_get_payload, {Command::GetPayload};; GetPayloadState);
-    cmd_fn!(_set_clsn_sensitivity, {Command::SetClsnSensitivity}; data: SetClsnSensitivityData; SetClsnSensitivityState);
-    cmd_fn!(_get_clsn_sensitivity, {Command::GetClsnSensitivity};; GetClsnSensitivityState);
-    cmd_fn!(_kine_forward, {Command::KineForward}; data: KineForwardData; KineForwardState);
-    cmd_fn!(_kine_inverse, {Command::KineInverse}; data: KineInverseData; KineInverseState);
-    cmd_fn!(_clear_error, {Command::ClearError};; ClearErrorState);
-    cmd_fn!(_get_joint_pos, {Command::GetJointPos};; GetJointPosState);
-    cmd_fn!(_get_tcp_pos, {Command::GetTcpPos};; GetTcpPosState);
-    cmd_fn!(_set_tio_vout_param, {Command::SetTioVoutParam}; data: SetTioVoutParamData; SetTioVoutParamState);
-    cmd_fn!(_get_tio_vout_param, {Command::GetTioVoutParam};; GetTioVoutParamState);
-
     pub fn set_tio_vout(&mut self, tio: TioVout) -> RobotResult<()> {
         let data = match tio {
             TioVout::Enable(mode) => match mode {
@@ -126,11 +57,11 @@ where
             },
             TioVout::Disable => SetTioVoutParamData { tio_vout_ena: 0, tio_vout_vol: 0 },
         };
-        self._set_tio_vout_param(data)?.into()
+        self.robot_impl._set_tio_vout_param(data)?.into()
     }
 
     pub fn get_tio_vout(&mut self) -> RobotResult<TioVout> {
-        let state = self._get_tio_vout_param()?;
+        let state = self.robot_impl._get_tio_vout_param()?;
         let tio = match state.tio_vout_ena {
             0 => TioVout::Disable,
             1 => match state.tio_vout_vol {
@@ -161,11 +92,10 @@ where
     /// # Arguments
     /// * `ip` - A string slice that holds the IP address of the robot.
     pub fn new(ip: &str) -> Self {
-        let network = NetWork::new(ip);
         let robot_state = NetWork::state_connect(ip);
         let mut robot = Self {
             marker: PhantomData,
-            network,
+            robot_impl: RobotImpl::new(ip),
             robot_state,
             streaming_handle: thread::spawn(|| {}),
             is_moving: false,
@@ -192,21 +122,21 @@ where
         format!("JAKA Robot v{JAKA_VERSION}")
     }
     fn init(&mut self) -> RobotResult<()> {
-        self._power_on()?.into()
+        self.robot_impl._power_on()?.into()
     }
     fn shutdown(&mut self) -> RobotResult<()> {
-        self._power_off()?.into()
+        self.robot_impl._power_off()?.into()
     }
     fn enable(&mut self) -> RobotResult<()> {
-        let _ = self._power_on()?;
-        self._enable()?.into()
+        let _ = self.robot_impl._power_on()?;
+        self.robot_impl._enable()?.into()
     }
     fn disable(&mut self) -> RobotResult<()> {
-        self._disable()?.into()
+        self.robot_impl._disable()?.into()
     }
     fn is_moving(&mut self) -> RobotResult<bool> {
         if self.is_moving {
-            self.is_moving = self._get_data().unwrap().curr_tcp_trans_vel > 0.1;
+            self.is_moving = self.robot_impl._get_data().unwrap().curr_tcp_trans_vel > 0.1;
         }
         Ok(self.is_moving)
     }
@@ -227,13 +157,13 @@ where
         unimplemented!()
     }
     fn stop(&mut self) -> RobotResult<()> {
-        self._stop_program()?.into()
+        self.robot_impl._stop_program()?.into()
     }
     fn emergency_stop(&mut self) -> RobotResult<()> {
         unimplemented!()
     }
     fn clear_emergency_stop(&mut self) -> RobotResult<()> {
-        self._clear_error()?.into()
+        self.robot_impl._clear_error()?.into()
     }
     fn read_state(&mut self) -> RobotResult<Self::State> {
         let state = self.robot_state.read().unwrap();
@@ -247,7 +177,7 @@ where
     [f64; N]: Serialize + for<'a> Deserialize<'a>,
 {
     fn state(&mut self) -> RobotResult<ArmState<N>> {
-        let data = self._get_data()?;
+        let data = self.robot_impl._get_data()?;
         let joint: [f64; N] = data.joint_actual_position[..N].try_into().unwrap();
         let joint = joint.map(|f| f.to_radians());
 
@@ -269,7 +199,7 @@ where
     }
     fn set_load(&mut self, load: LoadState) -> RobotResult<()> {
         let set_load_data = SetPayloadData { mass: load.m, centroid: load.x };
-        self._set_payload(set_load_data)?.into()
+        self.robot_impl._set_payload(set_load_data)?.into()
     }
     fn set_coord(&mut self, coord: Coord) -> RobotResult<()> {
         self.coord.set(coord);
@@ -360,7 +290,7 @@ where
             accel: self.max_acc.get()[0].to_degrees(),
             relflag: u8::from(coord != Coord::OCS),
         };
-        self._joint_move(move_data)?;
+        self.robot_impl._joint_move(move_data)?;
 
         Ok(())
     }
@@ -386,7 +316,7 @@ where
             accel: self.max_acc.get()[0].to_degrees(),
             relflag: u8::from(coord != Coord::OCS),
         };
-        self._move_l(move_data)?;
+        self.robot_impl._move_l(move_data)?;
 
         self.is_moving = false;
         Ok(())
@@ -534,7 +464,7 @@ where
     type Handle = JakaStreamingHandle<N>;
 
     fn start_streaming(&mut self) -> RobotResult<Self::Handle> {
-        self._servo_move(ServoMoveData { relflag: 1 })?;
+        self.robot_impl._servo_move(ServoMoveData { relflag: 1 })?;
 
         let motion = Arc::new(Mutex::new(None));
         // let motion_clone = motion.clone();
@@ -569,7 +499,7 @@ where
     fn end_streaming(&mut self) -> RobotResult<()> {
         // TODO
         self.streaming_handle.thread().unpark();
-        self._servo_move(ServoMoveData { relflag: 0 })?;
+        self.robot_impl._servo_move(ServoMoveData { relflag: 0 })?;
         Ok(())
     }
 
@@ -601,45 +531,49 @@ where
             ));
         }
         self.is_moving = true;
-        self._servo_move(ServoMoveData { relflag: 1 })?;
 
-        loop {
-            // let start_time = std::time::Instant::now();
-            // let state = self.state()?;
-            let state = ArmState::<N>::default();
+        let mut robot = self.robot_impl.clone();
 
-            // println!("get state spend time: {:?}", start_time.elapsed());
+        thread::spawn(move || {
+            robot._servo_move(ServoMoveData { relflag: 1 })?;
+            loop {
+                // let start_time = std::time::Instant::now();
+                // let state = self.state()?;
+                let state = ArmState::<N>::default();
 
-            let (motion, finished) =
-                closure(state.clone(), Duration::from_secs_f64(1. / JAKA_FREQUENCY));
+                // println!("get state spend time: {:?}", start_time.elapsed());
 
-            if finished {
-                break;
+                let (motion, finished) =
+                    closure(state.clone(), Duration::from_secs_f64(1. / JAKA_FREQUENCY));
+
+                if finished {
+                    robot._servo_move(ServoMoveData { relflag: 0 })?;
+                    break;
+                }
+
+                // println!("get motion spend time: {:?}", start_time.elapsed());
+
+                match motion {
+                    MotionType::Joint(joint) => {
+                        let data = ServoJData::<N> { joint_angles: rad_to_deg(joint), relflag: 0 };
+                        robot._servo_j(data)?;
+                    }
+                    MotionType::Cartesian(pose) => {
+                        let data = ServoPData { cat_position: pose.into(), relflag: 0 };
+                        robot._servo_p(data)?;
+                    }
+                    _ => {
+                        return Err(RobotException::CommandException(
+                            "Invalid motion type".to_string(),
+                        ));
+                    }
+                }
+
+                // println!("send motion spend time: {:?}", start_time.elapsed());
             }
+            Ok(())
+        });
 
-            // println!("get motion spend time: {:?}", start_time.elapsed());
-
-            match motion {
-                MotionType::Joint(joint) => {
-                    let data = ServoJData::<N> { joint_angles: rad_to_deg(joint), relflag: 0 };
-                    self._servo_j(data)?;
-                }
-                MotionType::Cartesian(pose) => {
-                    let data = ServoPData { cat_position: pose.into(), relflag: 0 };
-                    self._servo_p(data)?;
-                }
-                _ => {
-                    return Err(RobotException::CommandException(
-                        "Invalid motion type".to_string(),
-                    ));
-                }
-            }
-
-            // println!("send motion spend time: {:?}", start_time.elapsed());
-        }
-
-        self._servo_move(ServoMoveData { relflag: 0 })?;
-        self.is_moving = false;
         Ok(())
     }
     fn control_with_closure<FC>(&mut self, mut _closure: FC) -> RobotResult<()>

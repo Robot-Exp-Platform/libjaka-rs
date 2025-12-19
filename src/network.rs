@@ -1,7 +1,7 @@
 use std::{
     io::{Read, Write},
     net::TcpStream,
-    sync::{Arc, RwLock},
+    sync::{Arc, Mutex, RwLock},
 };
 
 use robot_behavior::{RobotException, RobotResult};
@@ -9,14 +9,16 @@ use robot_behavior::{RobotException, RobotResult};
 use crate::PORT_CMD;
 use crate::types::{CommandSerde, StateSerde};
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct NetWork {
-    tcp_cmd: Option<TcpStream>,
+    tcp_cmd: Option<Arc<Mutex<TcpStream>>>,
 }
 
 impl NetWork {
     pub fn new(ip: &str) -> NetWork {
-        let tcp_cmd = Some(TcpStream::connect(format!("{ip}:{PORT_CMD}")).unwrap());
+        let tcp_cmd = Some(Arc::new(Mutex::new(
+            TcpStream::connect(format!("{ip}:{PORT_CMD}")).unwrap(),
+        )));
         NetWork { tcp_cmd }
     }
 
@@ -59,9 +61,9 @@ impl NetWork {
             let data = data.serialize();
             #[cfg(feature = "debug")]
             println!("Sending command: {}", data);
-            tcp_cmd.write_all(data.as_bytes()).unwrap();
+            tcp_cmd.lock().unwrap().write_all(data.as_bytes()).unwrap();
             let mut buffer = [0; 1024 * 10];
-            let size = tcp_cmd.read(&mut buffer).unwrap();
+            let size = tcp_cmd.lock().unwrap().read(&mut buffer).unwrap();
             let data = std::str::from_utf8(&buffer[..size]).unwrap();
             #[cfg(feature = "debug")]
             println!("Received response: {}", data);

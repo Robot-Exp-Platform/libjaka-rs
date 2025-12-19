@@ -8,6 +8,7 @@ mod jaka;
 pub(crate) mod network;
 mod params;
 mod robot;
+pub mod robot_impl;
 pub mod types;
 
 pub use jaka::*;
