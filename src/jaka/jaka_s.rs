@@ -32,56 +32,37 @@ impl ArmParam<{ _JakaS5::N }> for JakaS5 {
     const JOINT_MIN: [f64; Self::N] = to_radians_array([-360., -85., -175., -85., -360., -360.]);
     const JOINT_MAX: [f64; Self::N] = to_radians_array([360., 265., 175., 265., 360., 360.]);
     const JOINT_VEL_BOUND: [f64; Self::N] = [PI; Self::N];
-    // const JOINT_ACC_BOUND: [f64; Self::N] = [PI * 4.; Self::N];  // not provided
+    const JOINT_ACC_BOUND: [f64; Self::N] = [PI * 4.; Self::N];
     const CARTESIAN_VEL_BOUND: f64 = 3.0;
+    const CARTESIAN_ACC_BOUND: f64 = 8.0;
+    const ROTATION_VEL_BOUND: f64 = PI;
+    const ROTATION_ACC_BOUND: f64 = PI * 4.;
 }
 
 impl ArmParam<{ _JakaS7::N }> for JakaS7 {
     const JOINT_DEFAULT: [f64; Self::N] = [0., 0., 0., 0., 0., 0.];
     const JOINT_PACKED: [f64; _JakaS7::N] = to_radians_array([-90., 0., 152., 120., 0., 0.]);
-    const JOINT_MIN: [f64; Self::N] = [
-        -PI * 2.,
-        -85. * PI / 180.,
-        -175. * PI / 180.,
-        -85. * PI / 180.,
-        -PI * 2.,
-        -PI * 2.,
-    ];
-    const JOINT_MAX: [f64; Self::N] = [
-        PI * 2.,
-        265. * PI / 180.,
-        175. * PI / 180.,
-        265. * PI / 180.,
-        PI * 2.,
-        PI * 2.,
-    ];
+    const JOINT_MIN: [f64; Self::N] = to_radians_array([-360., -85., -175., -85., -360., -360.]);
+    const JOINT_MAX: [f64; Self::N] = to_radians_array([360., 265., 175., 265., 360., 360.]);
     const JOINT_VEL_BOUND: [f64; Self::N] = [PI; Self::N];
-    // const JOINT_ACC_BOUND: [f64; Self::N] = [PI * 4.; Self::N];  // not provided
+    const JOINT_ACC_BOUND: [f64; Self::N] = [PI * 4.; Self::N];
     const CARTESIAN_VEL_BOUND: f64 = 2.5;
+    const CARTESIAN_ACC_BOUND: f64 = 8.0;
+    const ROTATION_VEL_BOUND: f64 = PI;
+    const ROTATION_ACC_BOUND: f64 = PI * 4.;
 }
 
 impl ArmParam<{ _JakaS12::N }> for JakaS12 {
     const JOINT_DEFAULT: [f64; Self::N] = [0., 0., 0., 0., 0., 0.];
     const JOINT_PACKED: [f64; _JakaS12::N] = to_radians_array([-90., 0., 152., 120., 0., 0.]);
-    const JOINT_MIN: [f64; Self::N] = [
-        -PI * 2.,
-        -85. * PI / 180.,
-        -175. * PI / 180.,
-        -85. * PI / 180.,
-        -PI * 2.,
-        -PI * 2.,
-    ];
-    const JOINT_MAX: [f64; Self::N] = [
-        PI * 2.,
-        265. * PI / 180.,
-        175. * PI / 180.,
-        265. * PI / 180.,
-        PI * 2.,
-        PI * 2.,
-    ];
+    const JOINT_MIN: [f64; Self::N] = to_radians_array([-360., -85., -175., -85., -360., -360.]);
+    const JOINT_MAX: [f64; Self::N] = to_radians_array([360., 265., 175., 265., 360., 360.]);
     const JOINT_VEL_BOUND: [f64; Self::N] = to_radians_array([120., 120., 120., 180., 180., 180.]);
-    // const JOINT_ACC_BOUND: [f64; Self::N] = [PI * 4.; Self::N];  // not provided
+    const JOINT_ACC_BOUND: [f64; Self::N] = [PI * 4.; Self::N];
     const CARTESIAN_VEL_BOUND: f64 = 3.0;
+    const CARTESIAN_ACC_BOUND: f64 = 8.0;
+    const ROTATION_VEL_BOUND: f64 = PI;
+    const ROTATION_ACC_BOUND: f64 = PI * 4.;
 }
 
 impl ArmForwardKinematics<{ _JakaS5::N }> for JakaS5 {

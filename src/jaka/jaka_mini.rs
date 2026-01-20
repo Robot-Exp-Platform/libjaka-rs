@@ -58,10 +58,10 @@ impl ArmParam<{ _JakaMini2::N }> for JakaMini2 {
     const JOINT_VEL_BOUND: [f64; Self::N] = [PI; Self::N];
     const JOINT_ACC_BOUND: [f64; Self::N] = [PI * 4.; Self::N];
     const JOINT_JERK_BOUND: [f64; Self::N] = [f64::MAX; Self::N];
-    const CARTESIAN_VEL_BOUND: f64 = 1000.;
-    const CARTESIAN_ACC_BOUND: f64 = 4000.;
-    const ROTATION_VEL_BOUND: f64 = 180.;
-    const ROTATION_ACC_BOUND: f64 = 400.;
+    const CARTESIAN_VEL_BOUND: f64 = 1.;
+    const CARTESIAN_ACC_BOUND: f64 = 8.0;
+    const ROTATION_VEL_BOUND: f64 = PI;
+    const ROTATION_ACC_BOUND: f64 = PI * 4.;
     const TORQUE_BOUND: [f64; Self::N] = [f64::MAX; Self::N];
     const TORQUE_DOT_BOUND: [f64; Self::N] = [f64::MAX; Self::N];
 }

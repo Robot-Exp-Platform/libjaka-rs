@@ -58,6 +58,9 @@ impl ArmParam<{ _JakaZu3::N }> for JakaZu3 {
     const JOINT_VEL_BOUND: [f64; Self::N] = to_radians_array([180., 180., 180., 220., 220., 220.]);
     // const JOINT_ACC_BOUND: [f64; Self::N] = [PI * 4.; Self::N];  // not provided
     const CARTESIAN_VEL_BOUND: f64 = 1.5;
+    const CARTESIAN_ACC_BOUND: f64 = 8.0;
+    const ROTATION_VEL_BOUND: f64 = PI;
+    const ROTATION_ACC_BOUND: f64 = PI * 4.;
 }
 
 impl ArmParam<{ _JakaZu5::N }> for JakaZu5 {
@@ -66,8 +69,11 @@ impl ArmParam<{ _JakaZu5::N }> for JakaZu5 {
     const JOINT_MIN: [f64; Self::N] = to_radians_array([-360., -85., -175., -85., -360., -360.]);
     const JOINT_MAX: [f64; Self::N] = to_radians_array([360., 265., 175., 265., 360., 360.]);
     const JOINT_VEL_BOUND: [f64; Self::N] = [PI; Self::N];
-    // const JOINT_ACC_BOUND: [f64; Self::N] = [PI * 4.; Self::N];  // not provided
+    const JOINT_ACC_BOUND: [f64; Self::N] = [PI * 4.; Self::N];
     const CARTESIAN_VEL_BOUND: f64 = 3.0;
+    const CARTESIAN_ACC_BOUND: f64 = 8.0;
+    const ROTATION_VEL_BOUND: f64 = PI;
+    const ROTATION_ACC_BOUND: f64 = PI * 4.;
 }
 
 impl ArmParam<{ _JakaZu7::N }> for JakaZu7 {
@@ -76,8 +82,11 @@ impl ArmParam<{ _JakaZu7::N }> for JakaZu7 {
     const JOINT_MIN: [f64; Self::N] = to_radians_array([-360., -85., -175., -85., -360., -360.]);
     const JOINT_MAX: [f64; Self::N] = to_radians_array([360., 265., 175., 265., 360., 360.]);
     const JOINT_VEL_BOUND: [f64; Self::N] = [PI; Self::N];
-    // const JOINT_ACC_BOUND: [f64; Self::N] = [PI * 4.; Self::N];  // not provided
+    const JOINT_ACC_BOUND: [f64; Self::N] = [PI * 4.; Self::N];
     const CARTESIAN_VEL_BOUND: f64 = 2.5;
+    const CARTESIAN_ACC_BOUND: f64 = 8.0;
+    const ROTATION_VEL_BOUND: f64 = PI;
+    const ROTATION_ACC_BOUND: f64 = PI * 4.;
 }
 
 impl ArmParam<{ _JakaZu12::N }> for JakaZu12 {
@@ -86,8 +95,11 @@ impl ArmParam<{ _JakaZu12::N }> for JakaZu12 {
     const JOINT_MIN: [f64; Self::N] = to_radians_array([-360., -85., -175., -85., -360., -360.]);
     const JOINT_MAX: [f64; Self::N] = to_radians_array([360., 265., 175., 265., 360., 360.]);
     const JOINT_VEL_BOUND: [f64; Self::N] = to_radians_array([120., 120., 120., 180., 180., 180.]);
-    // const JOINT_ACC_BOUND: [f64; Self::N] = [PI * 4.; Self::N];  // not provided
+    const JOINT_ACC_BOUND: [f64; Self::N] = [PI * 4.; Self::N];
     const CARTESIAN_VEL_BOUND: f64 = 3.0;
+    const CARTESIAN_ACC_BOUND: f64 = 8.0;
+    const ROTATION_VEL_BOUND: f64 = PI;
+    const ROTATION_ACC_BOUND: f64 = PI * 4.;
 }
 
 impl ArmParam<{ _JakaZu18::N }> for JakaZu18 {
@@ -96,8 +108,11 @@ impl ArmParam<{ _JakaZu18::N }> for JakaZu18 {
     const JOINT_MIN: [f64; Self::N] = to_radians_array([-360., -85., -175., -85., -360., -360.]);
     const JOINT_MAX: [f64; Self::N] = to_radians_array([360., 265., 175., 265., 360., 360.]);
     const JOINT_VEL_BOUND: [f64; Self::N] = to_radians_array([120., 120., 180., 180., 180., 180.]);
-    // const JOINT_ACC_BOUND: [f64; Self::N] = [PI * 4.; Self::N];  // not provided
+    const JOINT_ACC_BOUND: [f64; Self::N] = [PI * 4.; Self::N];
     const CARTESIAN_VEL_BOUND: f64 = 3.5;
+    const CARTESIAN_ACC_BOUND: f64 = 8.0;
+    const ROTATION_VEL_BOUND: f64 = PI;
+    const ROTATION_ACC_BOUND: f64 = PI * 4.;
 }
 
 impl ArmParam<{ _JakaZu20::N }> for JakaZu20 {
@@ -106,8 +121,11 @@ impl ArmParam<{ _JakaZu20::N }> for JakaZu20 {
     const JOINT_MIN: [f64; Self::N] = to_radians_array([-360., -85., -175., -85., -360., -360.]);
     const JOINT_MAX: [f64; Self::N] = to_radians_array([360., 265., 175., 265., 360., 360.]);
     const JOINT_VEL_BOUND: [f64; Self::N] = to_radians_array([120., 120., 120., 220., 220., 220.]);
-    // const JOINT_ACC_BOUND: [f64; Self::N] = [PI * 4.; Self::N];  // not provided
+    const JOINT_ACC_BOUND: [f64; Self::N] = [PI * 4.; Self::N];
     const CARTESIAN_VEL_BOUND: f64 = 5.0;
+    const CARTESIAN_ACC_BOUND: f64 = 8.0;
+    const ROTATION_VEL_BOUND: f64 = PI;
+    const ROTATION_ACC_BOUND: f64 = PI * 4.;
 }
 
 impl ArmParam<{ _JakaZu30::N }> for JakaZu30 {
@@ -116,8 +134,11 @@ impl ArmParam<{ _JakaZu30::N }> for JakaZu30 {
     const JOINT_MIN: [f64; Self::N] = to_radians_array([-360., -85., -175., -85., -360., -360.]);
     const JOINT_MAX: [f64; Self::N] = to_radians_array([360., 265., 175., 265., 360., 360.]);
     const JOINT_VEL_BOUND: [f64; Self::N] = to_radians_array([120., 120., 120., 220., 220., 220.]);
-    // const JOINT_ACC_BOUND: [f64; Self::N] = [PI * 4.; Self::N];  // not provided
+    const JOINT_ACC_BOUND: [f64; Self::N] = [PI * 4.; Self::N];
     const CARTESIAN_VEL_BOUND: f64 = 4.2;
+    const CARTESIAN_ACC_BOUND: f64 = 8.0;
+    const ROTATION_VEL_BOUND: f64 = PI;
+    const ROTATION_ACC_BOUND: f64 = PI * 4.;
 }
 
 impl ArmForwardKinematics<{ _JakaZu3::N }> for JakaZu3 {

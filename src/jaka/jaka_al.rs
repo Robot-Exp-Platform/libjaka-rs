@@ -18,8 +18,11 @@ impl ArmParam<{ _JakaA12L::N }> for JakaA12L {
     const JOINT_MIN: [f64; Self::N] = [-PI * 2.; Self::N];
     const JOINT_MAX: [f64; Self::N] = [PI * 2.; Self::N];
     const JOINT_VEL_BOUND: [f64; Self::N] = to_radians_array([150., 150., 210., 210., 265., 265.]);
-    // const JOINT_ACC_BOUND: [f64; Self::N] = [PI * 4.; Self::N];  // not provided
+    const JOINT_ACC_BOUND: [f64; Self::N] = [PI * 4.; Self::N];
     const CARTESIAN_VEL_BOUND: f64 = 4.0;
+    const CARTESIAN_ACC_BOUND: f64 = 8.0;
+    const ROTATION_VEL_BOUND: f64 = PI;
+    const ROTATION_ACC_BOUND: f64 = PI * 4.;
 }
 
 impl ArmForwardKinematics<{ _JakaA12L::N }> for JakaA12L {

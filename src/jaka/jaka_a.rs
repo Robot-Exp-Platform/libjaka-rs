@@ -32,6 +32,9 @@ impl ArmParam<{ _JakaA5::N }> for JakaA5 {
     const JOINT_VEL_BOUND: [f64; Self::N] = to_radians_array([210., 210., 210., 265., 265., 265.]);
     const JOINT_ACC_BOUND: [f64; Self::N] = [PI * 4.; Self::N];
     const CARTESIAN_VEL_BOUND: f64 = 3.5;
+    const CARTESIAN_ACC_BOUND: f64 = 8.0;
+    const ROTATION_VEL_BOUND: f64 = PI;
+    const ROTATION_ACC_BOUND: f64 = PI * 4.;
 }
 
 impl ArmParam<{ _JakaA12::N }> for JakaA12 {
@@ -42,6 +45,9 @@ impl ArmParam<{ _JakaA12::N }> for JakaA12 {
     const JOINT_VEL_BOUND: [f64; Self::N] = to_radians_array([150., 150., 210., 210., 265., 265.]);
     const JOINT_ACC_BOUND: [f64; Self::N] = [PI * 4.; Self::N];
     const CARTESIAN_VEL_BOUND: f64 = 4.0;
+    const CARTESIAN_ACC_BOUND: f64 = 8.0;
+    const ROTATION_VEL_BOUND: f64 = PI;
+    const ROTATION_ACC_BOUND: f64 = PI * 4.;
 }
 
 impl ArmParam<{ _JakaA20::N }> for JakaA20 {
@@ -52,6 +58,9 @@ impl ArmParam<{ _JakaA20::N }> for JakaA20 {
     const JOINT_VEL_BOUND: [f64; Self::N] = to_radians_array([120., 120., 120., 265., 265., 265.]);
     const JOINT_ACC_BOUND: [f64; Self::N] = [PI * 4.; Self::N];
     const CARTESIAN_VEL_BOUND: f64 = 5.;
+    const CARTESIAN_ACC_BOUND: f64 = 8.0;
+    const ROTATION_VEL_BOUND: f64 = PI;
+    const ROTATION_ACC_BOUND: f64 = PI * 4.;
 }
 
 impl ArmForwardKinematics<{ _JakaA5::N }> for JakaA5 {

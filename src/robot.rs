@@ -309,11 +309,18 @@ where
         }
         self.is_moving = true;
 
+        let mut pose: [f64; 6] = (*target).into();
+
+        for i in 0..3 {
+            pose[i] = pose[i] * 1000.0; // m to mm
+            pose[i + 3] = pose[i + 3].to_degrees();
+        }
+
         let coord = self.coord.get();
         let move_data = MoveLData {
-            cart_position: (*target).into(),
-            speed: self.max_vel.get()[0].to_degrees(),
-            accel: self.max_acc.get()[0].to_degrees(),
+            cart_position: pose,
+            speed: self.max_cartesian_vel.get() * 1000.0, // m/s to mm/s
+            accel: self.max_cartesian_acc.get() * 1000.0, // m/s² to mm/s²
             relflag: u8::from(coord != Coord::OCS),
         };
         self.robot_impl._move_l(move_data)?;
@@ -559,7 +566,12 @@ where
                         robot._servo_j(data)?;
                     }
                     MotionType::Cartesian(pose) => {
-                        let data = ServoPData { cat_position: pose.into(), relflag: 0 };
+                        let mut pose: [f64; 6] = pose.into();
+                        for i in 0..3 {
+                            pose[i] = pose[i] * 1000.0; // m to mm
+                            pose[i + 3] = pose[i + 3].to_degrees();
+                        }
+                        let data = ServoPData { cat_position: pose, relflag: 0 };
                         robot._servo_p(data)?;
                     }
                     _ => {
