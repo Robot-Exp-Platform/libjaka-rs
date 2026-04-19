@@ -1,8 +1,9 @@
 use crate::{JAKA_FREQUENCY, JAKA_VERSION, network::NetWork, robot_impl::RobotImpl, types::*};
 
 use robot_behavior::{
-    ArmDOF, ArmPreplannedPath, ArmState, ControlType, Coord, LoadState, MotionType, OverrideOnce,
-    Pose, Realtime, RobotException, RobotResult, behavior::*, utils::rad_to_deg,
+    ArmDOF, ArmPreplannedPath, ArmState, ControlType, Coord, JointStateMap, JointStateSync,
+    LoadState, MotionType, OverrideOnce, Pose, Realtime, RobotException, RobotResult, behavior::*,
+    update_joint_state_map, utils::rad_to_deg,
 };
 use rsruckig::{
     error::ThrowErrorHandler,
@@ -23,6 +24,10 @@ pub trait JakaType {
     const N: usize;
 }
 
+const JAKA_JOINT_NAMES: [&str; 6] = [
+    "joint_1", "joint_2", "joint_3", "joint_4", "joint_5", "joint_6",
+];
+
 /// # Jaja Robot (节卡机器人)
 ///
 pub struct JakaRobot<T: JakaType, const N: usize> {
@@ -39,10 +44,17 @@ pub struct JakaRobot<T: JakaType, const N: usize> {
     pub(crate) max_rotation_vel: OverrideOnce<f64>,
     pub(crate) max_rotation_acc: OverrideOnce<f64>,
     pub path: Option<Vec<MotionType<N>>>,
+    pub joint_state_map: JointStateMap,
 }
 
 impl<T: JakaType, const N: usize> ArmDOF for JakaRobot<T, N> {
     const N: usize = N;
+}
+
+impl<T: JakaType, const N: usize> JointStateSync for JakaRobot<T, N> {
+    fn joint_state_handle(&self) -> JointStateMap {
+        self.joint_state_map.clone()
+    }
 }
 
 impl<T: JakaType, const N: usize> JakaRobot<T, N>
@@ -107,6 +119,7 @@ where
             max_rotation_vel: OverrideOnce::new(Self::ROTATION_VEL_BOUND),
             max_rotation_acc: OverrideOnce::new(Self::ROTATION_ACC_BOUND),
             path: None,
+            joint_state_map: Default::default(),
         };
         let _ = robot.set_scale(0.05);
         robot
@@ -195,6 +208,7 @@ where
             load: None,
             torque: None,
         };
+        update_joint_state_map(&self.joint_state_map, &JAKA_JOINT_NAMES, &arm_state);
         Ok(arm_state)
     }
     fn set_load(&mut self, load: LoadState) -> RobotResult<()> {
@@ -312,7 +326,7 @@ where
         let mut pose: [f64; 6] = (*target).into();
 
         for i in 0..3 {
-            pose[i] = pose[i] * 1000.0; // m to mm
+            pose[i] *= 1000.0; // m to mm
             pose[i + 3] = pose[i + 3].to_degrees();
         }
 
@@ -568,7 +582,7 @@ where
                     MotionType::Cartesian(pose) => {
                         let mut pose: [f64; 6] = pose.into();
                         for i in 0..3 {
-                            pose[i] = pose[i] * 1000.0; // m to mm
+                            pose[i] *= 1000.0; // m to mm
                             pose[i + 3] = pose[i + 3].to_degrees();
                         }
                         let data = ServoPData { cat_position: pose, relflag: 0 };
