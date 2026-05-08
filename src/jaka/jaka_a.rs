@@ -25,6 +25,7 @@ pub type JakaA12 = JakaRobot<_JakaA12, { _JakaA12::N }>;
 pub type JakaA20 = JakaRobot<_JakaA20, { _JakaA20::N }>;
 
 impl ArmParam<{ _JakaA5::N }> for JakaA5 {
+    const CONTROL_PERIOD: f64 = 8e-3;
     const JOINT_DEFAULT: [f64; Self::N] = [0., 0., 0., 0., 0., 0.];
     const JOINT_PACKED: [f64; Self::N] = to_radians_array([-90., 0., 152., 120., 0., 0.]);
     const JOINT_MIN: [f64; Self::N] = [-PI * 2.; Self::N];
@@ -38,6 +39,7 @@ impl ArmParam<{ _JakaA5::N }> for JakaA5 {
 }
 
 impl ArmParam<{ _JakaA12::N }> for JakaA12 {
+    const CONTROL_PERIOD: f64 = 8e-3;
     const JOINT_DEFAULT: [f64; Self::N] = [0., 0., 0., 0., 0., 0.];
     const JOINT_PACKED: [f64; Self::N] = to_radians_array([0., 90., 180., -180., 180., 90.]);
     const JOINT_MIN: [f64; Self::N] = [-PI * 2.; Self::N];
@@ -51,6 +53,7 @@ impl ArmParam<{ _JakaA12::N }> for JakaA12 {
 }
 
 impl ArmParam<{ _JakaA20::N }> for JakaA20 {
+    const CONTROL_PERIOD: f64 = 8e-3;
     const JOINT_DEFAULT: [f64; Self::N] = [0., 0., 0., 0., 0., 0.];
     const JOINT_PACKED: [f64; Self::N] = to_radians_array([-90., 0., 152., 120., 0., 0.]);
     const JOINT_MIN: [f64; Self::N] = to_radians_array([-360., -85., -175., -85., -360., -360.]);

@@ -13,6 +13,7 @@ impl JakaType for _JakaA12L {
 pub type JakaA12L = crate::JakaRobot<_JakaA12L, { _JakaA12L::N }>;
 
 impl ArmParam<{ _JakaA12L::N }> for JakaA12L {
+    const CONTROL_PERIOD: f64 = 8e-3;
     const JOINT_DEFAULT: [f64; Self::N] = [0., 0., 0., 0., 0., 0.];
     const JOINT_PACKED: [f64; Self::N] = to_radians_array([90., 180., -180., 180., 90., 90.]);
     const JOINT_MIN: [f64; Self::N] = [-PI * 2.; Self::N];

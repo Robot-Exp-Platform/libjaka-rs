@@ -39,6 +39,7 @@ pub type JakaPro16 = JakaRobot<_JakaPro16, { _JakaPro16::N }>;
 pub type JakaPro18 = JakaRobot<_JakaPro18, { _JakaPro18::N }>;
 
 impl ArmParam<{ _JakaPro5::N }> for JakaPro5 {
+    const CONTROL_PERIOD: f64 = 8e-3;
     const JOINT_DEFAULT: [f64; Self::N] = [0., 0., 0., 0., 0., 0.];
     const JOINT_PACKED: [f64; Self::N] = to_radians_array([-90., 0., 152., 120., 0., 0.]);
     const JOINT_MIN: [f64; Self::N] = to_radians_array([-360., -85., -175., -85., -360., -360.]);
@@ -52,6 +53,7 @@ impl ArmParam<{ _JakaPro5::N }> for JakaPro5 {
 }
 
 impl ArmParam<{ _JakaPro7::N }> for JakaPro7 {
+    const CONTROL_PERIOD: f64 = 8e-3;
     const JOINT_DEFAULT: [f64; Self::N] = [0., 0., 0., 0., 0., 0.];
     const JOINT_PACKED: [f64; _JakaPro7::N] = to_radians_array([-90., 0., 152., 120., 0., 0.]);
     const JOINT_MIN: [f64; Self::N] = to_radians_array([-360., -85., -175., -85., -360., -360.]);
@@ -64,6 +66,7 @@ impl ArmParam<{ _JakaPro7::N }> for JakaPro7 {
     const ROTATION_ACC_BOUND: f64 = PI * 4.;
 }
 impl ArmParam<{ _JakaPro12::N }> for JakaPro12 {
+    const CONTROL_PERIOD: f64 = 8e-3;
     const JOINT_DEFAULT: [f64; Self::N] = [0., 0., 0., 0., 0., 0.];
     const JOINT_PACKED: [f64; _JakaPro12::N] = to_radians_array([-90., 0., 152., 120., 0., 0.]);
     const JOINT_MIN: [f64; Self::N] = to_radians_array([-360., -85., -175., -85., -360., -360.]);
@@ -77,6 +80,7 @@ impl ArmParam<{ _JakaPro12::N }> for JakaPro12 {
 }
 
 impl ArmParam<{ _JakaPro16::N }> for JakaPro16 {
+    const CONTROL_PERIOD: f64 = 8e-3;
     const JOINT_DEFAULT: [f64; Self::N] = [0., 0., 0., 0., 0., 0.];
     const JOINT_PACKED: [f64; _JakaPro16::N] = to_radians_array([-90., 0., 152., 120., 0., 0.]);
     const JOINT_MIN: [f64; Self::N] = to_radians_array([-360., -85., -175., -85., -360., -360.]);
@@ -90,6 +94,7 @@ impl ArmParam<{ _JakaPro16::N }> for JakaPro16 {
 }
 
 impl ArmParam<{ _JakaPro18::N }> for JakaPro18 {
+    const CONTROL_PERIOD: f64 = 8e-3;
     const JOINT_DEFAULT: [f64; Self::N] = [0., 0., 0., 0., 0., 0.];
     const JOINT_PACKED: [f64; _JakaPro18::N] = to_radians_array([-90., 0., 152., 120., 0., 0.]);
     const JOINT_MIN: [f64; Self::N] = to_radians_array([-360., -85., -175., -85., -360., -360.]);

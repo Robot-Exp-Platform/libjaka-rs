@@ -38,6 +38,7 @@ impl JakaMini2 {
 }
 
 impl ArmParam<{ _JakaMini2::N }> for JakaMini2 {
+    const CONTROL_PERIOD: f64 = 8e-3;
     const JOINT_DEFAULT: [f64; Self::N] = [0., FRAC_PI_3 * 2., -FRAC_PI_3 * 2., 0., -FRAC_PI_2, 0.];
     const JOINT_MIN: [f64; Self::N] = [
         -PI * 2.,
