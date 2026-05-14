@@ -1,9 +1,9 @@
 use crate::{JAKA_FREQUENCY, JAKA_VERSION, network::NetWork, robot_impl::RobotImpl, types::*};
 
 use robot_behavior::{
-    ArmDOF, ArmPreplannedPath, ArmState, ControlType, Coord, JointStateMap, JointStateSync,
-    LoadState, MotionType, OverrideOnce, Pose, Realtime, RobotException, RobotResult, behavior::*,
-    update_joint_state_map, utils::rad_to_deg,
+    ArmDOF, ArmPreplannedPath, ArmState, ArmStateSample, ControlType, Coord, JointStateMap,
+    JointStateSync, LoadState, MotionType, OverrideOnce, Pose, Realtime, RobotException,
+    RobotResult, behavior::*, update_joint_state_map, utils::rad_to_deg,
 };
 use rsruckig::{
     error::ThrowErrorHandler,
@@ -199,14 +199,17 @@ where
         let cartesian_rot = cartesian_rot.map(|f| f.to_radians());
         let pose_o_to_ee = Pose::Euler(cartesian_tran, cartesian_rot);
         let arm_state = ArmState {
-            joint: Some(joint),
-            joint_vel: None,
-            joint_acc: None,
-            pose_o_to_ee: Some(pose_o_to_ee),
-            pose_ee_to_k: None,
-            cartesian_vel: None,
+            measured: ArmStateSample {
+                joint: Some(joint),
+                joint_vel: None,
+                joint_acc: None,
+                pose_o_to_ee: Some(pose_o_to_ee),
+                pose_ee_to_k: None,
+                cartesian_vel: None,
+                torque: None,
+            },
             load: None,
-            torque: None,
+            ..Default::default()
         };
         update_joint_state_map(&self.joint_state_map, &JAKA_JOINT_NAMES, &arm_state);
         Ok(arm_state)
