@@ -9,7 +9,7 @@ use robot_behavior::{RobotException, RobotResult};
 
 /// Replace this URL with your real GitHub Release artifact after publishing.
 pub const JAKA_ASSETS_RELEASE_URL: &str =
-    "https://example.com/robot-exp-platform/libjaka-assets-v0.1.15.tar.gz";
+    "https://github.com/Robot-Exp-Platform/libjaka-rs/releases/download/v0.1.15/jaka.zip";
 
 /// Bump this when release assets change in an incompatible way.
 pub const JAKA_ASSETS_VERSION: &str = "libjaka-assets-v0.1.15";
