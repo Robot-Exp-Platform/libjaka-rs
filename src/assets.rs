@@ -137,10 +137,10 @@ fn find_assets_dir(root: &Path) -> Option<PathBuf> {
     let entries = fs::read_dir(root).ok()?;
     for entry in entries.flatten() {
         let path = entry.path();
-        if path.is_dir() {
-            if let Some(found) = find_assets_dir(&path) {
-                return Some(found);
-            }
+        if path.is_dir()
+            && let Some(found) = find_assets_dir(&path)
+        {
+            return Some(found);
         }
     }
     None
