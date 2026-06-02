@@ -17,7 +17,7 @@ use std::{
     marker::PhantomData,
     sync::{Arc, Mutex, RwLock},
     thread::{self, sleep},
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 pub trait JakaType {
@@ -27,6 +27,105 @@ pub trait JakaType {
 const JAKA_JOINT_NAMES: [&str; 6] = [
     "joint_1", "joint_2", "joint_3", "joint_4", "joint_5", "joint_6",
 ];
+
+fn arm_state_from_get_data<const N: usize>(data: &GetDataState) -> ArmState<N> {
+    let joint: [f64; N] = data.joint_actual_position[..N].try_into().unwrap();
+    let joint = joint.map(|f| f.to_radians());
+
+    let cartesian_tran = data.actual_position[0..3].try_into().unwrap();
+    let cartesian_rot: [f64; 3] = data.actual_position[3..6].try_into().unwrap();
+    let cartesian_rot = cartesian_rot.map(|f| f.to_radians());
+    let pose_o_to_ee = Pose::Euler(cartesian_tran, cartesian_rot);
+
+    ArmState {
+        measured: ArmStateSample {
+            joint: Some(joint),
+            joint_vel: None,
+            joint_acc: None,
+            pose_o_to_ee: Some(pose_o_to_ee),
+            pose_ee_to_k: None,
+            cartesian_vel: None,
+            torque: None,
+        },
+        load: None,
+        ..Default::default()
+    }
+}
+
+fn checked_default_state(state: DefaultState) -> RobotResult<()> {
+    state.into()
+}
+
+fn send_servo_motion<const N: usize>(
+    robot: &mut RobotImpl<N>,
+    motion: MotionType<N>,
+) -> RobotResult<()>
+where
+    [f64; N]: Serialize + for<'a> Deserialize<'a>,
+{
+    match motion {
+        MotionType::Joint(joint) => {
+            let state =
+                robot._servo_j(ServoJData::<N> { joint_angles: rad_to_deg(joint), relflag: 0 })?;
+            checked_default_state(state)
+        }
+        MotionType::Cartesian(pose) => {
+            let mut pose: [f64; 6] = pose.into();
+            for i in 0..3 {
+                pose[i] *= 1000.0;
+                pose[i + 3] = pose[i + 3].to_degrees();
+            }
+            let state = robot._servo_p(ServoPData { cat_position: pose, relflag: 0 })?;
+            checked_default_state(state)
+        }
+        MotionType::Stop => Ok(()),
+        _ => Err(RobotException::CommandException(
+            "JAKA realtime servo supports Joint, Cartesian, or Stop motion".to_string(),
+        )),
+    }
+}
+
+fn run_servo_motion_loop<const N: usize, FM>(
+    robot: &mut RobotImpl<N>,
+    mut closure: FM,
+    period: Duration,
+) -> RobotResult<()>
+where
+    [f64; N]: Serialize + for<'a> Deserialize<'a>,
+    FM: FnMut(ArmState<N>, Duration) -> (MotionType<N>, bool),
+{
+    checked_default_state(robot._servo_move(ServoMoveData { relflag: 1 })?)?;
+
+    let mut loop_result = Ok(());
+    loop {
+        let tick_start = Instant::now();
+        let state = match robot._get_data() {
+            Ok(data) => arm_state_from_get_data::<N>(&data),
+            Err(err) => {
+                loop_result = Err(err);
+                break;
+            }
+        };
+
+        let (motion, finished) = closure(state, period);
+        if finished {
+            break;
+        }
+
+        if let Err(err) = send_servo_motion(robot, motion) {
+            loop_result = Err(err);
+            break;
+        }
+
+        let elapsed = tick_start.elapsed();
+        if elapsed < period {
+            sleep(period - elapsed);
+        }
+    }
+
+    let stop_result = checked_default_state(robot._servo_move(ServoMoveData { relflag: 0 })?);
+    loop_result.and(stop_result)
+}
 
 /// # Jaja Robot (节卡机器人)
 ///
@@ -191,26 +290,7 @@ where
 {
     fn state(&mut self) -> RobotResult<ArmState<N>> {
         let data = self.robot_impl._get_data()?;
-        let joint: [f64; N] = data.joint_actual_position[..N].try_into().unwrap();
-        let joint = joint.map(|f| f.to_radians());
-
-        let cartesian_tran = data.actual_position[0..3].try_into().unwrap();
-        let cartesian_rot: [f64; 3] = data.actual_position[3..6].try_into().unwrap();
-        let cartesian_rot = cartesian_rot.map(|f| f.to_radians());
-        let pose_o_to_ee = Pose::Euler(cartesian_tran, cartesian_rot);
-        let arm_state = ArmState {
-            measured: ArmStateSample {
-                joint: Some(joint),
-                joint_vel: None,
-                joint_acc: None,
-                pose_o_to_ee: Some(pose_o_to_ee),
-                pose_ee_to_k: None,
-                cartesian_vel: None,
-                torque: None,
-            },
-            load: None,
-            ..Default::default()
-        };
+        let arm_state = arm_state_from_get_data::<N>(&data);
         update_joint_state_map(&self.joint_state_map, &JAKA_JOINT_NAMES, &arm_state);
         Ok(arm_state)
     }
@@ -545,7 +625,7 @@ where
     JakaRobot<T, N>: Arm<N>,
     [f64; N]: Serialize + for<'a> Deserialize<'a>,
 {
-    fn move_with_closure<FM>(&mut self, mut closure: FM) -> RobotResult<()>
+    fn move_with_closure<FM>(&mut self, closure: FM) -> RobotResult<()>
     where
         FM: FnMut(ArmState<N>, std::time::Duration) -> (MotionType<N>, bool) + Send + 'static,
     {
@@ -557,51 +637,16 @@ where
         self.is_moving = true;
 
         let mut robot = self.robot_impl.clone();
+        let period = Duration::from_secs_f64(1. / JAKA_FREQUENCY);
 
-        thread::spawn(move || {
-            robot._servo_move(ServoMoveData { relflag: 1 })?;
-            loop {
-                // let start_time = std::time::Instant::now();
-                // let state = self.state()?;
-                let state = ArmState::<N>::default();
-
-                // println!("get state spend time: {:?}", start_time.elapsed());
-
-                let (motion, finished) =
-                    closure(state.clone(), Duration::from_secs_f64(1. / JAKA_FREQUENCY));
-
-                if finished {
-                    robot._servo_move(ServoMoveData { relflag: 0 })?;
-                    break;
+        self.streaming_handle = thread::Builder::new()
+            .name("jaka-servo-motion".to_string())
+            .spawn(move || {
+                if let Err(err) = run_servo_motion_loop(&mut robot, closure, period) {
+                    eprintln!("JAKA realtime servo loop exited with error: {err}");
                 }
-
-                // println!("get motion spend time: {:?}", start_time.elapsed());
-
-                match motion {
-                    MotionType::Joint(joint) => {
-                        let data = ServoJData::<N> { joint_angles: rad_to_deg(joint), relflag: 0 };
-                        robot._servo_j(data)?;
-                    }
-                    MotionType::Cartesian(pose) => {
-                        let mut pose: [f64; 6] = pose.into();
-                        for i in 0..3 {
-                            pose[i] *= 1000.0; // m to mm
-                            pose[i + 3] = pose[i + 3].to_degrees();
-                        }
-                        let data = ServoPData { cat_position: pose, relflag: 0 };
-                        robot._servo_p(data)?;
-                    }
-                    _ => {
-                        return Err(RobotException::CommandException(
-                            "Invalid motion type".to_string(),
-                        ));
-                    }
-                }
-
-                // println!("send motion spend time: {:?}", start_time.elapsed());
-            }
-            Ok(())
-        });
+            })
+            .map_err(|err| RobotException::RealtimeException(err.to_string()))?;
 
         Ok(())
     }
