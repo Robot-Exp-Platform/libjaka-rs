@@ -1,10 +1,10 @@
 use std::f64::consts::{FRAC_PI_2, PI};
 
 use robot_behavior::{
-    ArmDOF, ArmForwardKinematics, ArmParam, DhParam, RobotFile, to_radians_array,
+    ArmForwardKinematics, DhParam, EndPoint, Joints, RobotDescription, to_radians_array,
 };
 
-use crate::{JakaRobot, JakaType};
+use crate::JakaRobot;
 
 pub struct _JakaPro5;
 pub struct _JakaPro7; // Pro7 & Pro18 are also public whose 2D/3D files are however not provided
@@ -12,103 +12,34 @@ pub struct _JakaPro12;
 pub struct _JakaPro16;
 pub struct _JakaPro18;
 
-impl JakaType for _JakaPro5 {
-    const N: usize = 6;
+pub type JakaPro5 = JakaRobot<_JakaPro5, 6>;
+pub type JakaPro7 = JakaRobot<_JakaPro7, 6>;
+pub type JakaPro12 = JakaRobot<_JakaPro12, 6>;
+pub type JakaPro16 = JakaRobot<_JakaPro16, 6>;
+pub type JakaPro18 = JakaRobot<_JakaPro18, 6>;
+
+impl RobotDescription for JakaPro5 {
+    const URDF: Option<&'static str> = Some("jaka/jaka_pro5.urdf");
 }
 
-impl JakaType for _JakaPro7 {
-    const N: usize = 6;
+impl Joints<6> for JakaPro5 {
+    const JOINT_DEFAULT: [f64; 6] = [0., 0., 0., 0., 0., 0.];
+    const JOINT_PACKED: [f64; 6] = to_radians_array([-90., 0., 152., 120., 0., 0.]);
+    const JOINT_MIN: [f64; 6] = to_radians_array([-360., -85., -175., -85., -360., -360.]);
+    const JOINT_MAX: [f64; 6] = to_radians_array([360., 265., 175., 265., 360., 360.]);
+    const JOINT_VEL_BOUND: [f64; 6] = [PI; 6];
+    const JOINT_ACC_BOUND: [f64; 6] = [PI * 4.; 6];
 }
 
-impl JakaType for _JakaPro12 {
-    const N: usize = 6;
-}
-
-impl JakaType for _JakaPro16 {
-    const N: usize = 6;
-}
-
-impl JakaType for _JakaPro18 {
-    const N: usize = 6;
-}
-
-pub type JakaPro5 = JakaRobot<_JakaPro5, { _JakaPro5::N }>;
-pub type JakaPro7 = JakaRobot<_JakaPro7, { _JakaPro7::N }>;
-pub type JakaPro12 = JakaRobot<_JakaPro12, { _JakaPro12::N }>;
-pub type JakaPro16 = JakaRobot<_JakaPro16, { _JakaPro16::N }>;
-pub type JakaPro18 = JakaRobot<_JakaPro18, { _JakaPro18::N }>;
-
-impl ArmParam<{ _JakaPro5::N }> for JakaPro5 {
-    const CONTROL_PERIOD: f64 = 8e-3;
-    const JOINT_DEFAULT: [f64; Self::N] = [0., 0., 0., 0., 0., 0.];
-    const JOINT_PACKED: [f64; Self::N] = to_radians_array([-90., 0., 152., 120., 0., 0.]);
-    const JOINT_MIN: [f64; Self::N] = to_radians_array([-360., -85., -175., -85., -360., -360.]);
-    const JOINT_MAX: [f64; Self::N] = to_radians_array([360., 265., 175., 265., 360., 360.]);
-    const JOINT_VEL_BOUND: [f64; Self::N] = [PI; Self::N];
-    const JOINT_ACC_BOUND: [f64; Self::N] = [PI * 4.; Self::N];
+impl EndPoint for JakaPro5 {
     const CARTESIAN_VEL_BOUND: f64 = 3.0;
     const CARTESIAN_ACC_BOUND: f64 = 8.0;
     const ROTATION_VEL_BOUND: f64 = PI;
     const ROTATION_ACC_BOUND: f64 = PI * 4.;
 }
 
-impl ArmParam<{ _JakaPro7::N }> for JakaPro7 {
-    const CONTROL_PERIOD: f64 = 8e-3;
-    const JOINT_DEFAULT: [f64; Self::N] = [0., 0., 0., 0., 0., 0.];
-    const JOINT_PACKED: [f64; _JakaPro7::N] = to_radians_array([-90., 0., 152., 120., 0., 0.]);
-    const JOINT_MIN: [f64; Self::N] = to_radians_array([-360., -85., -175., -85., -360., -360.]);
-    const JOINT_MAX: [f64; Self::N] = to_radians_array([360., 265., 175., 265., 360., 360.]);
-    const JOINT_VEL_BOUND: [f64; Self::N] = [PI; Self::N];
-    const JOINT_ACC_BOUND: [f64; Self::N] = [PI * 4.; Self::N];
-    const CARTESIAN_VEL_BOUND: f64 = 2.5;
-    const CARTESIAN_ACC_BOUND: f64 = 8.0;
-    const ROTATION_VEL_BOUND: f64 = PI;
-    const ROTATION_ACC_BOUND: f64 = PI * 4.;
-}
-impl ArmParam<{ _JakaPro12::N }> for JakaPro12 {
-    const CONTROL_PERIOD: f64 = 8e-3;
-    const JOINT_DEFAULT: [f64; Self::N] = [0., 0., 0., 0., 0., 0.];
-    const JOINT_PACKED: [f64; _JakaPro12::N] = to_radians_array([-90., 0., 152., 120., 0., 0.]);
-    const JOINT_MIN: [f64; Self::N] = to_radians_array([-360., -85., -175., -85., -360., -360.]);
-    const JOINT_MAX: [f64; Self::N] = to_radians_array([360., 265., 175., 265., 360., 360.]);
-    const JOINT_VEL_BOUND: [f64; Self::N] = to_radians_array([120., 120., 120., 180., 180., 180.]);
-    const JOINT_ACC_BOUND: [f64; Self::N] = [PI * 4.; Self::N];
-    const CARTESIAN_VEL_BOUND: f64 = 3.0;
-    const CARTESIAN_ACC_BOUND: f64 = 8.0;
-    const ROTATION_VEL_BOUND: f64 = PI;
-    const ROTATION_ACC_BOUND: f64 = PI * 4.;
-}
-
-impl ArmParam<{ _JakaPro16::N }> for JakaPro16 {
-    const CONTROL_PERIOD: f64 = 8e-3;
-    const JOINT_DEFAULT: [f64; Self::N] = [0., 0., 0., 0., 0., 0.];
-    const JOINT_PACKED: [f64; _JakaPro16::N] = to_radians_array([-90., 0., 152., 120., 0., 0.]);
-    const JOINT_MIN: [f64; Self::N] = to_radians_array([-360., -85., -175., -85., -360., -360.]);
-    const JOINT_MAX: [f64; Self::N] = to_radians_array([360., 265., 175., 265., 360., 360.]);
-    const JOINT_VEL_BOUND: [f64; Self::N] = to_radians_array([120., 120., 120., 180., 180., 180.]);
-    const JOINT_ACC_BOUND: [f64; Self::N] = [PI * 4.; Self::N];
-    const CARTESIAN_VEL_BOUND: f64 = 3.5;
-    const CARTESIAN_ACC_BOUND: f64 = 8.0;
-    const ROTATION_VEL_BOUND: f64 = PI;
-    const ROTATION_ACC_BOUND: f64 = PI * 4.;
-}
-
-impl ArmParam<{ _JakaPro18::N }> for JakaPro18 {
-    const CONTROL_PERIOD: f64 = 8e-3;
-    const JOINT_DEFAULT: [f64; Self::N] = [0., 0., 0., 0., 0., 0.];
-    const JOINT_PACKED: [f64; _JakaPro18::N] = to_radians_array([-90., 0., 152., 120., 0., 0.]);
-    const JOINT_MIN: [f64; Self::N] = to_radians_array([-360., -85., -175., -85., -360., -360.]);
-    const JOINT_MAX: [f64; Self::N] = to_radians_array([360., 265., 175., 265., 360., 360.]);
-    const JOINT_VEL_BOUND: [f64; Self::N] = to_radians_array([120., 120., 180., 180., 180., 180.]);
-    const JOINT_ACC_BOUND: [f64; Self::N] = [PI * 4.; Self::N];
-    const CARTESIAN_VEL_BOUND: f64 = 3.5;
-    const CARTESIAN_ACC_BOUND: f64 = 8.0;
-    const ROTATION_VEL_BOUND: f64 = PI;
-    const ROTATION_ACC_BOUND: f64 = PI * 4.;
-}
-
-impl ArmForwardKinematics<{ _JakaPro5::N }> for JakaPro5 {
-    const DH: [robot_behavior::DhParam; _JakaPro5::N] = [
+impl ArmForwardKinematics<6> for JakaPro5 {
+    const DH: [DhParam; 6] = [
         DhParam::DH { theta: 0., d: 0.12015, r: 0., alpha: FRAC_PI_2 },
         DhParam::DH { theta: 0., d: 0., r: 0.430, alpha: 0. },
         DhParam::DH { theta: 0., d: 0., r: 0.3685, alpha: 0. },
@@ -118,8 +49,28 @@ impl ArmForwardKinematics<{ _JakaPro5::N }> for JakaPro5 {
     ];
 }
 
-impl ArmForwardKinematics<{ _JakaPro7::N }> for JakaPro7 {
-    const DH: [robot_behavior::DhParam; _JakaPro7::N] = [
+impl RobotDescription for JakaPro7 {
+    const URDF: Option<&'static str> = Some("jaka/jaka_pro7.urdf");
+}
+
+impl Joints<6> for JakaPro7 {
+    const JOINT_DEFAULT: [f64; 6] = [0., 0., 0., 0., 0., 0.];
+    const JOINT_PACKED: [f64; 6] = to_radians_array([-90., 0., 152., 120., 0., 0.]);
+    const JOINT_MIN: [f64; 6] = to_radians_array([-360., -85., -175., -85., -360., -360.]);
+    const JOINT_MAX: [f64; 6] = to_radians_array([360., 265., 175., 265., 360., 360.]);
+    const JOINT_VEL_BOUND: [f64; 6] = [PI; 6];
+    const JOINT_ACC_BOUND: [f64; 6] = [PI * 4.; 6];
+}
+
+impl EndPoint for JakaPro7 {
+    const CARTESIAN_VEL_BOUND: f64 = 2.5;
+    const CARTESIAN_ACC_BOUND: f64 = 8.0;
+    const ROTATION_VEL_BOUND: f64 = PI;
+    const ROTATION_ACC_BOUND: f64 = PI * 4.;
+}
+
+impl ArmForwardKinematics<6> for JakaPro7 {
+    const DH: [DhParam; 6] = [
         DhParam::DH { theta: 0., d: 0.12015, r: 0., alpha: FRAC_PI_2 },
         DhParam::DH { theta: 0., d: 0., r: 0.360, alpha: 0. },
         DhParam::DH { theta: 0., d: 0., r: 0.3035, alpha: 0. },
@@ -129,8 +80,28 @@ impl ArmForwardKinematics<{ _JakaPro7::N }> for JakaPro7 {
     ];
 }
 
-impl ArmForwardKinematics<{ _JakaPro12::N }> for JakaPro12 {
-    const DH: [robot_behavior::DhParam; _JakaPro12::N] = [
+impl RobotDescription for JakaPro12 {
+    const URDF: Option<&'static str> = Some("jaka/jaka_pro12.urdf");
+}
+
+impl Joints<6> for JakaPro12 {
+    const JOINT_DEFAULT: [f64; 6] = [0., 0., 0., 0., 0., 0.];
+    const JOINT_PACKED: [f64; 6] = to_radians_array([-90., 0., 152., 120., 0., 0.]);
+    const JOINT_MIN: [f64; 6] = to_radians_array([-360., -85., -175., -85., -360., -360.]);
+    const JOINT_MAX: [f64; 6] = to_radians_array([360., 265., 175., 265., 360., 360.]);
+    const JOINT_VEL_BOUND: [f64; 6] = to_radians_array([120., 120., 120., 180., 180., 180.]);
+    const JOINT_ACC_BOUND: [f64; 6] = [PI * 4.; 6];
+}
+
+impl EndPoint for JakaPro12 {
+    const CARTESIAN_VEL_BOUND: f64 = 3.0;
+    const CARTESIAN_ACC_BOUND: f64 = 8.0;
+    const ROTATION_VEL_BOUND: f64 = PI;
+    const ROTATION_ACC_BOUND: f64 = PI * 4.;
+}
+
+impl ArmForwardKinematics<6> for JakaPro12 {
+    const DH: [DhParam; 6] = [
         DhParam::DH { theta: 0., d: 0.14265, r: 0., alpha: FRAC_PI_2 },
         DhParam::DH { theta: 0., d: 0., r: 0.595, alpha: 0. },
         DhParam::DH { theta: 0., d: 0., r: 0.5715, alpha: 0. },
@@ -140,8 +111,28 @@ impl ArmForwardKinematics<{ _JakaPro12::N }> for JakaPro12 {
     ];
 }
 
-impl ArmForwardKinematics<{ _JakaPro16::N }> for JakaPro16 {
-    const DH: [robot_behavior::DhParam; _JakaPro16::N] = [
+impl RobotDescription for JakaPro16 {
+    const URDF: Option<&'static str> = Some("jaka/jaka_pro16.urdf");
+}
+
+impl Joints<6> for JakaPro16 {
+    const JOINT_DEFAULT: [f64; 6] = [0., 0., 0., 0., 0., 0.];
+    const JOINT_PACKED: [f64; 6] = to_radians_array([-90., 0., 152., 120., 0., 0.]);
+    const JOINT_MIN: [f64; 6] = to_radians_array([-360., -85., -175., -85., -360., -360.]);
+    const JOINT_MAX: [f64; 6] = to_radians_array([360., 265., 175., 265., 360., 360.]);
+    const JOINT_VEL_BOUND: [f64; 6] = to_radians_array([120., 120., 120., 180., 180., 180.]);
+    const JOINT_ACC_BOUND: [f64; 6] = [PI * 4.; 6];
+}
+
+impl EndPoint for JakaPro16 {
+    const CARTESIAN_VEL_BOUND: f64 = 3.5;
+    const CARTESIAN_ACC_BOUND: f64 = 8.0;
+    const ROTATION_VEL_BOUND: f64 = PI;
+    const ROTATION_ACC_BOUND: f64 = PI * 4.;
+}
+
+impl ArmForwardKinematics<6> for JakaPro16 {
+    const DH: [DhParam; 6] = [
         DhParam::DH { theta: 0., d: 0.1965, r: 0., alpha: FRAC_PI_2 },
         DhParam::DH { theta: 0., d: 0., r: 0.819, alpha: 0. },
         DhParam::DH { theta: 0., d: 0., r: 0.687, alpha: 0. },
@@ -151,8 +142,28 @@ impl ArmForwardKinematics<{ _JakaPro16::N }> for JakaPro16 {
     ];
 }
 
-impl ArmForwardKinematics<{ _JakaPro18::N }> for JakaPro18 {
-    const DH: [robot_behavior::DhParam; _JakaPro18::N] = [
+impl RobotDescription for JakaPro18 {
+    const URDF: Option<&'static str> = Some("jaka/jaka_pro18.urdf");
+}
+
+impl Joints<6> for JakaPro18 {
+    const JOINT_DEFAULT: [f64; 6] = [0., 0., 0., 0., 0., 0.];
+    const JOINT_PACKED: [f64; 6] = to_radians_array([-90., 0., 152., 120., 0., 0.]);
+    const JOINT_MIN: [f64; 6] = to_radians_array([-360., -85., -175., -85., -360., -360.]);
+    const JOINT_MAX: [f64; 6] = to_radians_array([360., 265., 175., 265., 360., 360.]);
+    const JOINT_VEL_BOUND: [f64; 6] = to_radians_array([120., 120., 180., 180., 180., 180.]);
+    const JOINT_ACC_BOUND: [f64; 6] = [PI * 4.; 6];
+}
+
+impl EndPoint for JakaPro18 {
+    const CARTESIAN_VEL_BOUND: f64 = 3.5;
+    const CARTESIAN_ACC_BOUND: f64 = 8.0;
+    const ROTATION_VEL_BOUND: f64 = PI;
+    const ROTATION_ACC_BOUND: f64 = PI * 4.;
+}
+
+impl ArmForwardKinematics<6> for JakaPro18 {
+    const DH: [DhParam; 6] = [
         DhParam::DH { theta: 0., d: 0.14265, r: 0., alpha: FRAC_PI_2 },
         DhParam::DH { theta: 0., d: 0., r: 0.510, alpha: 0. },
         DhParam::DH { theta: 0., d: 0., r: 0.400, alpha: 0. },
@@ -160,24 +171,4 @@ impl ArmForwardKinematics<{ _JakaPro18::N }> for JakaPro18 {
         DhParam::DH { theta: 0., d: 0.115, r: 0., alpha: FRAC_PI_2 },
         DhParam::DH { theta: 0., d: 0.1035, r: 0., alpha: 0. },
     ];
-}
-
-impl RobotFile for JakaPro5 {
-    const URDF: &'static str = "jaka/jaka_pro5.urdf";
-}
-
-impl RobotFile for JakaPro7 {
-    const URDF: &'static str = "jaka/jaka_pro7.urdf";
-}
-
-impl RobotFile for JakaPro12 {
-    const URDF: &'static str = "jaka/jaka_pro12.urdf";
-}
-
-impl RobotFile for JakaPro16 {
-    const URDF: &'static str = "jaka/jaka_pro16.urdf";
-}
-
-impl RobotFile for JakaPro18 {
-    const URDF: &'static str = "jaka/jaka_pro18.urdf";
 }

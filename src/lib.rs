@@ -26,7 +26,10 @@ mod libjaka {
     #[pymodule_export]
     use super::ffi::to_py::PyJakaMini2;
     #[pymodule_export]
-    use robot_behavior::{LoadState, PyArmState, PyControlType, PyMotionType, PyPose};
+    use robot_behavior::{
+        LoadState, PyArmState, PyJointSample, PyJointState, PyMotionType, PyPose, PySpatialSample,
+        PySpatialState,
+    };
 
     // #[pyo3::pyfunction]
     // fn test_closure(closure: pyo3::Py<pyo3::PyAny>) {

@@ -1,6 +1,8 @@
-use std::marker::ConstParamTy;
+﻿use std::marker::ConstParamTy;
 
-use robot_behavior::{RobotException, RobotResult};
+use robot_behavior::{
+    ArmState, JointSample, Pose, RobotException, RobotResult, SpatialSample, StateView,
+};
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use serde_json::Value;
 use serde_with::serde_as;
@@ -328,6 +330,36 @@ pub struct GetDataState {
     pub error_msg: String,
 }
 
+impl<const N: usize> From<GetDataState> for ArmState<N> {
+    fn from(value: GetDataState) -> Self {
+        let joint: [f64; N] = value.joint_actual_position[..N].try_into().unwrap();
+        let joint = joint.map(|f| f.to_radians());
+
+        let cartesian_tran = value.actual_position[0..3].try_into().unwrap();
+        let cartesian_rot: [f64; 3] = value.actual_position[3..6].try_into().unwrap();
+        let cartesian_rot = cartesian_rot.map(|f| f.to_radians());
+        let pose_o_to_ee = Pose::Euler(cartesian_tran, cartesian_rot);
+
+        ArmState {
+            joint: StateView::from_meas(JointSample {
+                q: Some(joint),
+                dq: None,
+                ddq: None,
+                tau: None,
+                dtau: None,
+            }),
+            flange: StateView::from_meas(SpatialSample {
+                pose: Some(pose_o_to_ee),
+                vel: None,
+                acc: None,
+                wrench: None,
+            }),
+            load: None,
+            ..Default::default()
+        }
+    }
+}
+
 // rapid rate
 pub type RapidRateRequest = Request<{ Command::RapidRate }, RapidRateData>;
 pub type RapidRateResponse = Response<{ Command::RapidRate }, RapidRateState>;
@@ -458,7 +490,7 @@ pub type SetUserOffsetsResponse = Response<{ Command::SetUserOffsets }, SetUserO
 pub type SetUserOffsetsState = DefaultState;
 #[derive(Serialize, Deserialize)]
 pub struct SetUserOffsetsData {
-    pub useroffset: [f64; 6], //文档中的变量名有拼写错误
+    pub useroffset: [f64; 6], //鏂囨。涓殑鍙橀噺鍚嶆湁鎷煎啓閿欒
     pub id: u8,
     pub name: String,
 }
@@ -469,7 +501,7 @@ pub type SetUserIdResponse = Response<{ Command::SetUserId }, SetUserIdState>;
 pub type SetUserIdState = DefaultState;
 #[derive(Serialize, Deserialize)]
 pub struct SetUserIdData {
-    pub user_frame_id: u8, //文档中的变量名说明有错误
+    pub user_frame_id: u8, //鏂囨。涓殑鍙橀噺鍚嶈鏄庢湁閿欒
 }
 
 // get extio status
@@ -653,7 +685,7 @@ pub type SetClsnSensitivityState = DefaultState;
 #[derive(Serialize, Deserialize)]
 pub struct SetClsnSensitivityData {
     #[serde(rename = "sensitivityVal")]
-    pub sensitivity_level: u8, // 更改了文档中的变量名以与下一命令一致
+    pub sensitivity_level: u8,
 }
 
 // get clsn sensitivity

@@ -1,155 +1,180 @@
-use robot_behavior::{
-    ControlType, CxxArmState, LoadState, MotionType, behavior::*, cxx_arm_behavior, cxx_arm_param,
-    cxx_arm_preplanned_motion, cxx_arm_preplanned_motion_ext, cxx_arm_preplanned_motion_impl,
-    cxx_robot_behavior,
-};
+use robot_behavior::{Arm, FlangeSpace, JointSpace, LoadState, MoveTo, Pose, Robot, RobotResult};
 
 struct JakaMini2(crate::JakaMini2);
 
 #[cxx::bridge]
 mod libjaka {
-    pub struct CxxMotionType {
-        pub mode: CxxMotionTypeMode,
-        pub values: Vec<f64>,
-    }
-    pub enum CxxMotionTypeMode {
-        Joint,
-        JointVel,
-        Cartesian,
-        CartesianVel,
+    enum CxxPoseKind {
+        Euler,
+        Quat,
+        Homo,
+        AxisAngle,
         Position,
-        PositionVel,
-        Stop,
     }
-    pub struct CxxControlType {
-        pub mode: CxxControlTypeMode,
-        pub values: Vec<f64>,
+
+    struct CxxPoseData {
+        kind: CxxPoseKind,
+        values: Vec<f64>,
     }
-    pub enum CxxControlTypeMode {
-        Zero,
-        Torque,
-    }
-    pub struct CxxLoadState {
-        pub m: f64,
-        pub x: [f64; 3],
-        pub i: [f64; 9],
-    }
+
     extern "Rust" {
         type JakaMini2;
 
-        #[Self = "JakaMini2"]
-        fn attach(ip: &str) -> Box<JakaMini2>;
-
-        #[Self = "JakaMini2"]
-        fn version() -> String;
+        fn jaka_mini2_attach(ip: &str) -> Box<JakaMini2>;
+        fn version(&self) -> String;
         fn init(&mut self) -> Result<()>;
         fn shutdown(&mut self) -> Result<()>;
         fn enable(&mut self) -> Result<()>;
         fn disable(&mut self) -> Result<()>;
         fn reset(&mut self) -> Result<()>;
-        fn is_moving(&mut self) -> bool;
         fn stop(&mut self) -> Result<()>;
-        fn pause(&mut self) -> Result<()>;
-        fn resume(&mut self) -> Result<()>;
         fn emergency_stop(&mut self) -> Result<()>;
         fn clear_emergency_stop(&mut self) -> Result<()>;
-
-        fn move_joint(&mut self, target: &[f64; 6]) -> Result<()>;
-        fn move_joint_async(&mut self, target: &[f64; 6]) -> Result<()>;
-
-        // fn move_cartesian(&mut self, target: &Pose) -> Result<()>;
-        // fn move_cartesian_async(&mut self, target: &Pose) -> Result<()>;
+        fn is_moving(&mut self) -> Result<bool>;
+        fn state(&mut self) -> Result<String>;
+        fn set_load(&mut self, m: f64, x: [f64; 3], i: [f64; 9]) -> Result<()>;
+        fn get_joint(&self) -> [f64; 6];
+        fn get_endpoint(&self) -> CxxPoseData;
+        fn move_joint(&mut self, target: [f64; 6]) -> Result<()>;
+        fn move_joint_sync(&mut self, target: [f64; 6]) -> Result<()>;
+        fn move_flange(&mut self, target: CxxPoseData) -> Result<()>;
+        fn move_flange_sync(&mut self, target: CxxPoseData) -> Result<()>;
     }
 }
 
 pub use libjaka::*;
 
-impl JakaMini2 {
-    pub fn attach(ip: &str) -> Box<Self> {
-        Box::new(JakaMini2(crate::JakaMini2::new(ip)))
-    }
+fn jaka_mini2_attach(ip: &str) -> Box<JakaMini2> {
+    Box::new(JakaMini2(crate::JakaMini2::new(ip)))
 }
 
 impl JakaMini2 {
-    cxx_robot_behavior!(JakaMini2(crate::JakaMini2));
-    cxx_arm_behavior!(JakaMini2<{6}>(crate::JakaMini2));
-    cxx_arm_param!(JakaMini2<{6}>(crate::JakaMini2));
-    cxx_arm_preplanned_motion_impl!(JakaMini2<{6}>(crate::JakaMini2));
-    cxx_arm_preplanned_motion!(JakaMini2<{6}>(crate::JakaMini2));
-    cxx_arm_preplanned_motion_ext!(JakaMini2<{6}>(crate::JakaMini2));
-}
+    fn version(&self) -> String {
+        <crate::JakaMini2 as Robot>::version()
+    }
 
-impl<const N: usize> From<CxxMotionType> for MotionType<N> {
-    fn from(cxx: CxxMotionType) -> Self {
-        match cxx.mode {
-            CxxMotionTypeMode::Joint => MotionType::Joint(cxx.values.try_into().unwrap()),
-            CxxMotionTypeMode::JointVel => MotionType::JointVel(cxx.values.try_into().unwrap()),
-            CxxMotionTypeMode::Cartesian => MotionType::Cartesian(cxx.values.into()),
-            CxxMotionTypeMode::CartesianVel => {
-                MotionType::CartesianVel(cxx.values.try_into().unwrap())
-            }
-            CxxMotionTypeMode::Position => MotionType::Position(cxx.values.try_into().unwrap()),
-            CxxMotionTypeMode::PositionVel => {
-                MotionType::PositionVel(cxx.values.try_into().unwrap())
-            }
-            CxxMotionTypeMode::Stop => MotionType::Stop,
-            _ => panic!("Invalid mode for MotionType"),
-        }
+    fn init(&mut self) -> RobotResult<()> {
+        <crate::JakaMini2 as Robot>::init(&mut self.0)
+    }
+
+    fn shutdown(&mut self) -> RobotResult<()> {
+        <crate::JakaMini2 as Robot>::shutdown(&mut self.0)
+    }
+
+    fn enable(&mut self) -> RobotResult<()> {
+        <crate::JakaMini2 as Robot>::enable(&mut self.0)
+    }
+
+    fn disable(&mut self) -> RobotResult<()> {
+        <crate::JakaMini2 as Robot>::disable(&mut self.0)
+    }
+
+    fn reset(&mut self) -> RobotResult<()> {
+        <crate::JakaMini2 as Robot>::reset(&mut self.0)
+    }
+
+    fn stop(&mut self) -> RobotResult<()> {
+        <crate::JakaMini2 as Robot>::stop(&mut self.0)
+    }
+
+    fn emergency_stop(&mut self) -> RobotResult<()> {
+        <crate::JakaMini2 as Robot>::emergency_stop(&mut self.0)
+    }
+
+    fn clear_emergency_stop(&mut self) -> RobotResult<()> {
+        <crate::JakaMini2 as Robot>::clear_emergency_stop(&mut self.0)
+    }
+
+    fn is_moving(&mut self) -> RobotResult<bool> {
+        <crate::JakaMini2 as Robot>::is_moving(&mut self.0)
+    }
+
+    fn state(&mut self) -> RobotResult<String> {
+        Ok(format!(
+            "{:?}",
+            <crate::JakaMini2 as Arm<6>>::state(&mut self.0)?
+        ))
+    }
+
+    fn set_load(&mut self, m: f64, x: [f64; 3], i: [f64; 9]) -> RobotResult<()> {
+        <crate::JakaMini2 as Arm<6>>::set_load(&mut self.0, LoadState { m, x, i })
+    }
+
+    fn get_joint(&self) -> [f64; 6] {
+        <crate::JakaMini2 as Arm<6>>::get_joint(&self.0)
+    }
+
+    fn get_endpoint(&self) -> CxxPoseData {
+        pose_to_cxx(<crate::JakaMini2 as Arm<6>>::get_endpoint(&self.0))
+    }
+
+    fn move_joint(&mut self, target: [f64; 6]) -> RobotResult<()> {
+        <crate::JakaMini2 as MoveTo<JointSpace<6>>>::move_to(&mut self.0, target)
+    }
+
+    fn move_joint_sync(&mut self, target: [f64; 6]) -> RobotResult<()> {
+        <crate::JakaMini2 as MoveTo<JointSpace<6>>>::move_to_sync(&mut self.0, target)
+    }
+
+    fn move_flange(&mut self, target: CxxPoseData) -> RobotResult<()> {
+        <crate::JakaMini2 as MoveTo<FlangeSpace>>::move_to(&mut self.0, cxx_to_pose(target)?)
+    }
+
+    fn move_flange_sync(&mut self, target: CxxPoseData) -> RobotResult<()> {
+        <crate::JakaMini2 as MoveTo<FlangeSpace>>::move_to_sync(&mut self.0, cxx_to_pose(target)?)
     }
 }
 
-impl<const N: usize> From<MotionType<N>> for CxxMotionType {
-    fn from(motion: MotionType<N>) -> Self {
-        match motion {
-            MotionType::Joint(v) => {
-                CxxMotionType { mode: CxxMotionTypeMode::Joint, values: v.to_vec() }
-            }
-            MotionType::JointVel(v) => {
-                CxxMotionType { mode: CxxMotionTypeMode::JointVel, values: v.to_vec() }
-            }
-            MotionType::Cartesian(v) => {
-                CxxMotionType { mode: CxxMotionTypeMode::Cartesian, values: v.into() }
-            }
-            MotionType::CartesianVel(v) => {
-                CxxMotionType { mode: CxxMotionTypeMode::CartesianVel, values: v.to_vec() }
-            }
-            MotionType::Position(v) => {
-                CxxMotionType { mode: CxxMotionTypeMode::Position, values: v.to_vec() }
-            }
-            MotionType::PositionVel(v) => {
-                CxxMotionType { mode: CxxMotionTypeMode::PositionVel, values: v.to_vec() }
-            }
-            MotionType::Stop => CxxMotionType {
-                mode: CxxMotionTypeMode::Position, // Use Position as a placeholder for Stop
-                values: vec![],
-            },
+fn pose_to_cxx(pose: Pose) -> CxxPoseData {
+    match pose {
+        Pose::Euler(tran, rot) => {
+            let mut values = Vec::with_capacity(6);
+            values.extend_from_slice(&tran);
+            values.extend_from_slice(&rot);
+            CxxPoseData { kind: CxxPoseKind::Euler, values }
         }
+        Pose::Quat(pose) => {
+            let mut values = Vec::with_capacity(7);
+            values.extend_from_slice(pose.translation.vector.as_slice());
+            values.extend_from_slice(pose.rotation.coords.as_slice());
+            CxxPoseData { kind: CxxPoseKind::Quat, values }
+        }
+        Pose::Homo(values) => CxxPoseData { kind: CxxPoseKind::Homo, values: values.to_vec() },
+        Pose::AxisAngle(tran, axis, angle) => {
+            let mut values = Vec::with_capacity(7);
+            values.extend_from_slice(&tran);
+            values.extend_from_slice(&axis);
+            values.push(angle);
+            CxxPoseData { kind: CxxPoseKind::AxisAngle, values }
+        }
+        Pose::Position(tran) => CxxPoseData { kind: CxxPoseKind::Position, values: tran.to_vec() },
     }
 }
 
-impl<const N: usize> From<CxxControlType> for ControlType<N> {
-    fn from(cxx: CxxControlType) -> Self {
-        match cxx.mode {
-            CxxControlTypeMode::Zero => ControlType::Zero,
-            CxxControlTypeMode::Torque => ControlType::Torque(cxx.values.try_into().unwrap()),
-            _ => panic!("Invalid mode for ControlType"),
-        }
-    }
-}
-
-impl<const N: usize> From<ControlType<N>> for CxxControlType {
-    fn from(control: ControlType<N>) -> Self {
-        match control {
-            ControlType::Zero => CxxControlType { mode: CxxControlTypeMode::Zero, values: vec![] },
-            ControlType::Torque(v) => {
-                CxxControlType { mode: CxxControlTypeMode::Torque, values: v.to_vec() }
-            }
-        }
-    }
-}
-
-impl From<CxxLoadState> for LoadState {
-    fn from(cxx: CxxLoadState) -> Self {
-        LoadState { m: cxx.m, x: cxx.x, i: cxx.i }
+fn cxx_to_pose(data: CxxPoseData) -> RobotResult<Pose> {
+    match (data.kind, data.values.len()) {
+        (CxxPoseKind::Euler, 6) => Ok(Pose::Euler(
+            data.values[..3].try_into().unwrap(),
+            data.values[3..6].try_into().unwrap(),
+        )),
+        (CxxPoseKind::Quat, 7) => Ok(Pose::from([
+            data.values[0],
+            data.values[1],
+            data.values[2],
+            data.values[3],
+            data.values[4],
+            data.values[5],
+            data.values[6],
+        ])),
+        (CxxPoseKind::Homo, 16) => Ok(Pose::Homo(data.values.try_into().unwrap())),
+        (CxxPoseKind::AxisAngle, 7) => Ok(Pose::AxisAngle(
+            data.values[..3].try_into().unwrap(),
+            data.values[3..6].try_into().unwrap(),
+            data.values[6],
+        )),
+        (CxxPoseKind::Position, 3) => Ok(Pose::Position(data.values.try_into().unwrap())),
+        _ => Err(robot_behavior::RobotException::InvalidFFIData(
+            "invalid CxxPoseData length for pose kind".into(),
+        )),
     }
 }

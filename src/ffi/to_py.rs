@@ -1,8 +1,6 @@
-use pyo3::{pyclass, pymethods, types::PyAnyMethods};
+use pyo3::{pyclass, pymethods};
 use robot_behavior::{
-    behavior::*, py_arm_behavior, py_arm_param, py_arm_preplanned_motion,
-    py_arm_preplanned_motion_ext, py_arm_preplanned_motion_impl, py_arm_real_time_control,
-    py_arm_real_time_control_ext, py_robot_behavior,
+    py_arm, py_flange_move, py_joint_motion, py_joint_position_control, py_robot,
 };
 
 use crate::JakaMini2;
@@ -18,11 +16,8 @@ impl PyJakaMini2 {
     }
 }
 
-py_robot_behavior!(PyJakaMini2(JakaMini2));
-py_arm_behavior!(PyJakaMini2<{6}>(JakaMini2));
-py_arm_param!(PyJakaMini2<{6}>(JakaMini2));
-py_arm_preplanned_motion!(PyJakaMini2<{6}>(JakaMini2));
-py_arm_preplanned_motion_impl!(PyJakaMini2<{6}>(JakaMini2));
-py_arm_preplanned_motion_ext!(PyJakaMini2<{6}>(JakaMini2));
-py_arm_real_time_control!(PyJakaMini2<{6}>(JakaMini2));
-py_arm_real_time_control_ext!(PyJakaMini2<{6}>(JakaMini2));
+py_robot!(PyJakaMini2(JakaMini2));
+py_arm!(PyJakaMini2<{6}>(JakaMini2));
+py_joint_motion!(PyJakaMini2<{6}>(JakaMini2));
+py_flange_move!(PyJakaMini2(JakaMini2));
+py_joint_position_control!(PyJakaMini2<{6}>(JakaMini2));

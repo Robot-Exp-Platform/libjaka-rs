@@ -1,25 +1,15 @@
-// use std::{thread::sleep, time::Duration};
+use std::f64::consts::PI;
 
 use libjaka::JakaMini2;
-use robot_behavior::{Pose, RobotResult, behavior::*};
+use robot_behavior::{RobotResult, behavior::*};
 
 fn main() -> RobotResult<()> {
-    let mut robot = JakaMini2::new("10.5.5.100");
+    let mut robot = JakaMini2::new("10.5.5.100").with_cartesian_vel(1.0);
     robot.enable()?;
-    robot.robot_impl._stop_program()?;
-    // robot.move_joint_async(&[0.0; 6], 100.0)?;
-    // robot.move_joint_async(&[-90., -30., -90., 0., -30., 0.], 100.0)?;
-    robot
-        .with_cartesian_velocity(100.0)
-        .move_cartesian_async(&Pose::Euler([300.0, 0.0, 30.0], [180.0, 0.0, 180.0]))?;
-    // let move_l_data = MoveLData {
-    //     cart_position: [400.0, 0.0, 300.0, 0.0, 0.0, 0.0],
-    //     accel: 100.0,
-    //     speed: 20.0,
-    //     relflag: 0,
-    // };
-    // robot._move_l(move_l_data)?;
-    // sleep(Duration::from_secs(5));
-    // robot.disable()?;
+    robot.stop()?;
+
+    // 以受限的笛卡尔速度移动到法兰目标位姿（平移单位：米，姿态单位：弧度）。
+    robot.move_to_sync::<FlangeSpace>(Pose::Euler([0.3, 0.0, 0.03], [PI, 0.0, PI]))?;
+
     Ok(())
 }

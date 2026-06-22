@@ -1,33 +1,35 @@
 use nalgebra as na;
-use std::{f64::consts::PI, sync::Arc, time::Duration};
+use std::{f64::consts::PI, sync::Arc};
 
 use libjaka::JakaMini2;
-use robot_behavior::{MotionType, Pose, RobotResult, behavior::*};
-use std::thread::sleep;
+use robot_behavior::{RobotResult, behavior::*};
 
 fn main() -> RobotResult<()> {
-    let mut robot = JakaMini2::new("10.5.5.100");
+    let mut robot = JakaMini2::new("10.5.5.100").with_cartesian_vel(1.0);
     robot.enable()?;
 
-    robot
-        .with_cartesian_velocity(100.0)
-        .move_cartesian_async(&Pose::Euler([300.0, 0.0, 30.0], [-180.0, 0.0, 180.0]))?;
-    sleep(Duration::from_secs(2));
-    // 根据预设参数做曲线规划
-    let (d, curve) = cone_spiral_curve([300.0, 0.0, 30.0], 60.0, 3, 0.3, 0.3);
+    // 先移动到曲线起点附近（平移单位：米，姿态单位：弧度）。
+    robot.move_to_sync::<FlangeSpace>(Pose::Euler([0.3, 0.0, 0.03], [-PI, 0.0, PI]))?;
 
-    // 使用笛卡尔速度上限做时间规划，需要确保 d 是笛卡尔空间内的总距离 ，最小时间为 t_min , 我不知道笛卡尔空间加速度是多少，先给了个 1.0 试试水
-    let (t_min, f_t) = simple_4th_curve(1., 10. / d, 8. / d);
-    let mut t = Duration::from_secs(0);
-    let t_min = Duration::from_secs_f64(t_min);
-    let closure = move |_, period| {
-        t += period;
-        (curve(f_t(t)), t > t_min)
-    };
+    // 生成圆锥螺旋线轨迹（内部以毫米 / 角度表示）。
+    let (_length, curve) = cone_spiral_curve([300.0, 0.0, 30.0], 60.0, 3, 0.3, 0.3);
 
-    robot.move_with_closure(closure)?;
+    // 均匀采样曲线，并以法兰直线段串流跟随该笛卡尔轨迹。
+    const SAMPLES: usize = 200;
+    for i in 0..=SAMPLES {
+        let progress = i as f64 / SAMPLES as f64;
+        robot.move_to_sync::<FlangeSpace>(to_si(curve(progress)))?;
+    }
 
     Ok(())
+}
+
+/// 把曲线生成的“毫米 + 角度”位姿转换为 robot_behavior 约定的“米 + 弧度”。
+fn to_si(pose: Pose) -> Pose {
+    let Pose::Euler(tran, rot) = pose else {
+        return pose;
+    };
+    Pose::Euler(tran.map(|v| v / 1000.0), rot.map(f64::to_radians))
 }
 
 // 这个函数是设计用于生成一个圆锥螺旋线的轨迹，返回一个按进展返回运动的闭包和一个最大距离
@@ -37,10 +39,7 @@ fn cone_spiral_curve(
     loops: usize,
     theta: f64,
     alpha: f64,
-) -> (
-    f64,
-    Arc<dyn Fn(f64) -> MotionType<{ JakaMini2::N }> + Send + Sync>,
-) {
+) -> (f64, Arc<dyn Fn(f64) -> Pose + Send + Sync>) {
     let r_base = h * theta.tan();
     let n = loops as f64;
     let sin_theta = theta.sin();
@@ -68,14 +67,7 @@ fn cone_spiral_curve(
 }
 
 // gpt 写的函数，计算当前点的坐标和姿态
-fn compute_point(
-    t: f64,
-    vertex: [f64; 3],
-    h: f64,
-    loops: usize,
-    r_base: f64,
-    alpha: f64,
-) -> MotionType<{ JakaMini2::N }> {
+fn compute_point(t: f64, vertex: [f64; 3], h: f64, loops: usize, r_base: f64, alpha: f64) -> Pose {
     // 位置计算
     let radius = r_base * t;
     let angle = 2.0 * PI * loops as f64 * t;
@@ -106,7 +98,6 @@ fn compute_point(
     // let euler = rot.euler_angles();
     // let euler_deg = euler.map(|r| r.to_degrees()); // 转换为角度制
 
-    // MotionType::Cartesian(Pose::Euler([x, y, z], euler_deg.into())) // 使用角度制发送
     let (roll, pitch, yaw) = rot.euler_angles();
     let euler_deg = (roll.to_degrees(), pitch.to_degrees(), yaw.to_degrees());
     println!(
@@ -118,38 +109,5 @@ fn compute_point(
         pitch.to_degrees(),
         yaw.to_degrees()
     );
-    MotionType::Cartesian(Pose::Euler([x, y, z], euler_deg.into()))
-}
-
-// 这个函数用于生成四阶平滑曲线，在变量分离后作为时间函数使用
-fn simple_4th_curve(
-    delta: f64,
-    v_max: f64,
-    a_max: f64,
-) -> (f64, Arc<dyn Fn(Duration) -> f64 + Send + Sync>) {
-    if delta < 1e-6 {
-        return (0., Arc::new(|_| 0.));
-    }
-    let mut v_max = v_max;
-    if delta < 1.5 * v_max.powi(2) / a_max {
-        v_max = (2. / 3. * delta * a_max).sqrt();
-    }
-
-    let t1 = 1.5 * v_max / a_max;
-    let t_min = t1 + delta / v_max;
-
-    let f = move |t: Duration| {
-        let t = t.as_secs_f64();
-        if t < t1 {
-            (t / t1).powi(3) * (t1 - 0.5 * t) * v_max
-        } else if t < t_min - t1 {
-            t1 * v_max / 2. + (t - t1) * v_max
-        } else if t < t_min {
-            delta - ((t_min - t) / t1).powi(3) * (t1 - 0.5 * (t_min - t)) * v_max
-        } else {
-            delta
-        }
-    };
-
-    (t_min, Arc::new(f))
+    Pose::Euler([x, y, z], euler_deg.into())
 }

@@ -1,9 +1,9 @@
 use crate::{JAKA_FREQUENCY, JAKA_VERSION, network::NetWork, robot_impl::RobotImpl, types::*};
 
 use robot_behavior::{
-    ArmDOF, ArmPreplannedPath, ArmState, ArmStateSample, ControlType, Coord, JointStateMap,
-    JointStateSync, LoadState, MotionType, OverrideOnce, Pose, Realtime, RobotException,
-    RobotResult, behavior::*, update_joint_state_map, utils::rad_to_deg,
+    Arm, ArmState, ControlWith, Coord, EndPoint, FlangeSpace, JointPositionControl, JointSpace,
+    JointState, Joints, LoadState, MoveTo, MoveTraj, OverrideOnce, Pose, Robot, RobotException,
+    RobotResult, utils::rad_to_deg,
 };
 use rsruckig::{
     error::ThrowErrorHandler,
@@ -15,121 +15,16 @@ use rsruckig::{
 use serde::{Deserialize, Serialize};
 use std::{
     marker::PhantomData,
-    sync::{Arc, Mutex, RwLock},
+    sync::{Arc, RwLock},
     thread::{self, sleep},
     time::{Duration, Instant},
 };
-
-pub trait JakaType {
-    const N: usize;
-}
-
-const JAKA_JOINT_NAMES: [&str; 6] = [
-    "joint_1", "joint_2", "joint_3", "joint_4", "joint_5", "joint_6",
-];
-
-fn arm_state_from_get_data<const N: usize>(data: &GetDataState) -> ArmState<N> {
-    let joint: [f64; N] = data.joint_actual_position[..N].try_into().unwrap();
-    let joint = joint.map(|f| f.to_radians());
-
-    let cartesian_tran = data.actual_position[0..3].try_into().unwrap();
-    let cartesian_rot: [f64; 3] = data.actual_position[3..6].try_into().unwrap();
-    let cartesian_rot = cartesian_rot.map(|f| f.to_radians());
-    let pose_o_to_ee = Pose::Euler(cartesian_tran, cartesian_rot);
-
-    ArmState {
-        measured: ArmStateSample {
-            joint: Some(joint),
-            joint_vel: None,
-            joint_acc: None,
-            pose_o_to_ee: Some(pose_o_to_ee),
-            pose_ee_to_k: None,
-            cartesian_vel: None,
-            torque: None,
-        },
-        load: None,
-        ..Default::default()
-    }
-}
-
-fn checked_default_state(state: DefaultState) -> RobotResult<()> {
-    state.into()
-}
-
-fn send_servo_motion<const N: usize>(
-    robot: &mut RobotImpl<N>,
-    motion: MotionType<N>,
-) -> RobotResult<()>
-where
-    [f64; N]: Serialize + for<'a> Deserialize<'a>,
-{
-    match motion {
-        MotionType::Joint(joint) => {
-            let state =
-                robot._servo_j(ServoJData::<N> { joint_angles: rad_to_deg(joint), relflag: 0 })?;
-            checked_default_state(state)
-        }
-        MotionType::Cartesian(pose) => {
-            let mut pose: [f64; 6] = pose.into();
-            for i in 0..3 {
-                pose[i] *= 1000.0;
-                pose[i + 3] = pose[i + 3].to_degrees();
-            }
-            let state = robot._servo_p(ServoPData { cat_position: pose, relflag: 0 })?;
-            checked_default_state(state)
-        }
-        MotionType::Stop => Ok(()),
-        _ => Err(RobotException::CommandException(
-            "JAKA realtime servo supports Joint, Cartesian, or Stop motion".to_string(),
-        )),
-    }
-}
-
-fn run_servo_motion_loop<const N: usize, FM>(
-    robot: &mut RobotImpl<N>,
-    mut closure: FM,
-    period: Duration,
-) -> RobotResult<()>
-where
-    [f64; N]: Serialize + for<'a> Deserialize<'a>,
-    FM: FnMut(ArmState<N>, Duration) -> (MotionType<N>, bool),
-{
-    checked_default_state(robot._servo_move(ServoMoveData { relflag: 1 })?)?;
-
-    let mut loop_result = Ok(());
-    loop {
-        let tick_start = Instant::now();
-        let state = match robot._get_data() {
-            Ok(data) => arm_state_from_get_data::<N>(&data),
-            Err(err) => {
-                loop_result = Err(err);
-                break;
-            }
-        };
-
-        let (motion, finished) = closure(state, period);
-        if finished {
-            break;
-        }
-
-        if let Err(err) = send_servo_motion(robot, motion) {
-            loop_result = Err(err);
-            break;
-        }
-
-        let elapsed = tick_start.elapsed();
-        if elapsed < period {
-            sleep(period - elapsed);
-        }
-    }
-
-    let stop_result = checked_default_state(robot._servo_move(ServoMoveData { relflag: 0 })?);
-    loop_result.and(stop_result)
-}
-
-/// # Jaja Robot (节卡机器人)
-///
-pub struct JakaRobot<T: JakaType, const N: usize> {
+/// # JAKA 闁哄牆鎼▍鎺撶閻氬绀勯柤鍝勫€稿畷閬嶅嫉閸濆嫭鐝ゅù婊呭皑缁?///
+/// 婵炲绋戦悗閿嬨仚閸楃偛袟闁挎稒鐡猅` 濞戞挸鎼悗鐑藉矗闁垮鍨奸悹浣稿簻缁辨紮N` 濞戞挸鎼崣褔鎳為崒婵嗘闁汇垹宕€规娊濡撮崒娑氭Ж濞戞搩浜滈崣鎸庢媴閹惧磭鈧兘宕ｉ悜瑙ｅ亾濮樺磭绠栧☉鎾虫惈閸欏墽鐚剧拠鑼偓鐑藉礆椤愩垺鍊?/// 闁挎稑鐗嗛々?`JakaZu5 = JakaRobot<_JakaZu5, 6>`闁挎稑顦悿鍕偝?[`Joints`]闁靛棔绠穈EndPoint`]闁?
+/// [`RobotDescription`]闁靛棔绠穈ArmForwardKinematics`]闁挎稑鏈俊鎼佸礄閸濆嫬鑼冮柛娆忓€归弳鐔哥閵夈儳鍩楅梺鎻掔箰閿涙劙寮版惔鈥虫瘔闁哄鍎荤槐閬嶅箥閳ь剟寮?
+/// 閻炴稑濂旂拹?trait闁挎稑婧俙Robot`]闁靛棔绠穈Arm`]闁靛棔绠穈MoveTo`]闁靛棔绠穈MoveTraj`]闁靛棔绠穈ControlWith`]闁?
+/// 闁汇垼椴稿﹢鎵尵鐠囪尙鈧绱掗悢鍓侇伇婵炲绋戦悗椋庘偓鍦仧楠炲洭濡?
+pub struct JakaRobot<T, const N: usize> {
     pub(crate) marker: PhantomData<T>,
     pub robot_impl: RobotImpl<N>,
     pub(crate) robot_state: Arc<RwLock<RobotState>>,
@@ -142,21 +37,9 @@ pub struct JakaRobot<T: JakaType, const N: usize> {
     pub(crate) max_cartesian_acc: OverrideOnce<f64>,
     pub(crate) max_rotation_vel: OverrideOnce<f64>,
     pub(crate) max_rotation_acc: OverrideOnce<f64>,
-    pub path: Option<Vec<MotionType<N>>>,
-    pub joint_state_map: JointStateMap,
 }
 
-impl<T: JakaType, const N: usize> ArmDOF for JakaRobot<T, N> {
-    const N: usize = N;
-}
-
-impl<T: JakaType, const N: usize> JointStateSync for JakaRobot<T, N> {
-    fn joint_state_handle(&self) -> JointStateMap {
-        self.joint_state_map.clone()
-    }
-}
-
-impl<T: JakaType, const N: usize> JakaRobot<T, N>
+impl<T, const N: usize> JakaRobot<T, N>
 where
     [f64; N]: Serialize + for<'a> Deserialize<'a>,
 {
@@ -194,14 +77,12 @@ where
     }
 }
 
-impl<T: JakaType, const N: usize> JakaRobot<T, N>
+impl<T, const N: usize> JakaRobot<T, N>
 where
-    JakaRobot<T, N>: ArmParam<N> + Arm<N>,
+    [f64; N]: Serialize + for<'a> Deserialize<'a>,
+    Self: Joints<N> + EndPoint,
 {
-    /// Create a new `JakaRobot` instance with the given IP address.
-    ///
-    /// # Arguments
-    /// * `ip` - A string slice that holds the IP address of the robot.
+    /// 濞寸姰鍎崇划鎵偓?IP 闁革附婢樺鍐礆濞戞绱?`JakaRobot` 閻庡湱鍋樼欢銉╁Υ?
     pub fn new(ip: &str) -> Self {
         let robot_state = NetWork::state_connect(ip);
         let mut robot = Self {
@@ -217,21 +98,39 @@ where
             max_cartesian_acc: OverrideOnce::new(Self::CARTESIAN_ACC_BOUND),
             max_rotation_vel: OverrideOnce::new(Self::ROTATION_VEL_BOUND),
             max_rotation_acc: OverrideOnce::new(Self::ROTATION_ACC_BOUND),
-            path: None,
-            joint_state_map: Default::default(),
         };
         let _ = robot.set_scale(0.05);
         robot
     }
+
+    /// 閻犱礁澧介悿鍡涘矗閸屾績鍋撻崘銊︾稄闁哄秴娲ㄩ柈鎾晬閸喎鐦☉鏂挎噽閺佹捇寮崼顒傜闁?
+    pub fn set_coord(&mut self, coord: Coord) {
+        self.coord.set(coord);
+    }
+
+    /// 闁圭顦伴惁顔界瑹鐎ｎ剛绱氶柡鈧幆褍褰犻柤?缂佹绋戝畷杈╀焊閺冨牃鍋撻悢宄邦唺濞戞挸楠告慨鐐烘焻閻斿嘲顔婂☉鎾筹躬濡炬椽鏁嶉崼鐔风槷濞戞柨鎳愰弫鎾诲极閸剛绀嗛柕?
+    pub fn set_scale(&mut self, scale: f64) {
+        self.max_vel.set(Self::JOINT_VEL_BOUND.map(|v| v * scale));
+        self.max_acc.set(Self::JOINT_ACC_BOUND.map(|v| v * scale));
+        self.max_cartesian_vel
+            .set(Self::CARTESIAN_VEL_BOUND * scale);
+        self.max_cartesian_acc
+            .set(Self::CARTESIAN_ACC_BOUND * scale);
+    }
 }
 
-impl<T: JakaType, const N: usize> Robot for JakaRobot<T, N>
+impl<T, const N: usize> Robot for JakaRobot<T, N>
 where
     [f64; N]: Serialize + for<'a> Deserialize<'a>,
 {
     type State = RobotState;
+    const CONTROL_PERIOD: f64 = 1. / JAKA_FREQUENCY;
+
     fn version() -> String {
         format!("JAKA Robot v{JAKA_VERSION}")
+    }
+    fn read_state(&mut self) -> RobotResult<Self::State> {
+        Ok(self.robot_state.read().unwrap().clone())
     }
     fn init(&mut self) -> RobotResult<()> {
         self.robot_impl._power_on()?.into()
@@ -252,127 +151,97 @@ where
         }
         Ok(self.is_moving)
     }
-
     fn waiting_for_finish(&mut self) -> RobotResult<()> {
         while self.is_moving()? {
             sleep(Duration::from_millis(100));
         }
         Ok(())
     }
-    fn reset(&mut self) -> RobotResult<()> {
-        unimplemented!()
-    }
-    fn pause(&mut self) -> RobotResult<()> {
-        unimplemented!()
-    }
-    fn resume(&mut self) -> RobotResult<()> {
-        unimplemented!()
-    }
     fn stop(&mut self) -> RobotResult<()> {
         self.robot_impl._stop_program()?.into()
-    }
-    fn emergency_stop(&mut self) -> RobotResult<()> {
-        unimplemented!()
     }
     fn clear_emergency_stop(&mut self) -> RobotResult<()> {
         self.robot_impl._clear_error()?.into()
     }
-    fn read_state(&mut self) -> RobotResult<Self::State> {
-        let state = self.robot_state.read().unwrap();
-        Ok(state.clone())
-    }
 }
 
-impl<T: JakaType, const N: usize> Arm<N> for JakaRobot<T, N>
+impl<T, const N: usize> Arm<N> for JakaRobot<T, N>
 where
-    JakaRobot<T, N>: ArmParam<N>,
     [f64; N]: Serialize + for<'a> Deserialize<'a>,
+    Self: Joints<N> + EndPoint,
 {
     fn state(&mut self) -> RobotResult<ArmState<N>> {
         let data = self.robot_impl._get_data()?;
-        let arm_state = arm_state_from_get_data::<N>(&data);
-        update_joint_state_map(&self.joint_state_map, &JAKA_JOINT_NAMES, &arm_state);
-        Ok(arm_state)
+        Ok(data.into())
     }
     fn set_load(&mut self, load: LoadState) -> RobotResult<()> {
         let set_load_data = SetPayloadData { mass: load.m, centroid: load.x };
         self.robot_impl._set_payload(set_load_data)?.into()
     }
-    fn set_coord(&mut self, coord: Coord) -> RobotResult<()> {
-        self.coord.set(coord);
-        Ok(())
+
+    fn get_joint(&self) -> [f64; N] {
+        let mut robot_impl = self.robot_impl.clone();
+        robot_impl
+            ._get_data()
+            .map(|data| Into::<ArmState<N>>::into(data).joint.meas.q.unwrap())
+            .unwrap_or([0.; N])
     }
-    fn set_scale(&mut self, scale: f64) -> RobotResult<()> {
-        self.max_vel.set(Self::JOINT_VEL_BOUND.map(|v| v * scale));
-        self.max_acc.set(Self::JOINT_ACC_BOUND.map(|v| v * scale));
-        self.max_cartesian_vel
-            .set(Self::CARTESIAN_VEL_BOUND * scale);
-        self.max_cartesian_acc
-            .set(Self::CARTESIAN_ACC_BOUND * scale);
-        Ok(())
+    fn get_endpoint(&self) -> Pose {
+        let mut robot_impl = self.robot_impl.clone();
+        robot_impl
+            ._get_data()
+            .map(|data| Into::<ArmState<N>>::into(data).flange.meas.pose.unwrap())
+            .unwrap_or_default()
     }
 
-    fn with_coord(&mut self, coord: Coord) -> &mut Self {
-        self.coord.once(coord);
+    fn with_joint_vel(mut self, vel_bound: [f64; N]) -> Self {
+        self.max_vel.once(vel_bound);
         self
     }
-    fn with_scale(&mut self, scale: f64) -> &mut Self {
-        self.max_vel.once(Self::JOINT_VEL_BOUND.map(|v| v * scale));
-        self.max_acc.once(Self::JOINT_ACC_BOUND.map(|v| v * scale));
-        self.max_cartesian_vel
-            .once(Self::CARTESIAN_VEL_BOUND * scale);
-        self.max_cartesian_acc
-            .once(Self::CARTESIAN_ACC_BOUND * scale);
+    fn with_joint_acc(mut self, acc_bound: [f64; N]) -> Self {
+        self.max_acc.once(acc_bound);
         self
     }
-    fn with_velocity(&mut self, joint_vel: &[f64; N]) -> &mut Self {
-        self.max_vel.once(*joint_vel);
+    fn with_joint_jerk(self, _jerk_bound: [f64; N]) -> Self {
         self
     }
-    fn with_acceleration(&mut self, joint_acc: &[f64; N]) -> &mut Self {
-        self.max_acc.once(*joint_acc);
+    fn with_torque(self, _torque_bound: [f64; N]) -> Self {
         self
     }
-    fn with_jerk(&mut self, _joint_jerk: &[f64; N]) -> &mut Self {
+    fn with_torque_dot(self, _torque_dot_bound: [f64; N]) -> Self {
         self
     }
-    fn with_cartesian_velocity(&mut self, cartesian_vel: f64) -> &mut Self {
-        self.max_cartesian_vel.once(cartesian_vel);
+
+    fn with_cartesian_vel(mut self, vel_bound: f64) -> Self {
+        self.max_cartesian_vel.once(vel_bound);
         self
     }
-    fn with_cartesian_acceleration(&mut self, cartesian_acc: f64) -> &mut Self {
-        self.max_cartesian_acc.once(cartesian_acc);
+    fn with_cartesian_acc(mut self, acc_bound: f64) -> Self {
+        self.max_cartesian_acc.once(acc_bound);
         self
     }
-    fn with_cartesian_jerk(&mut self, _cartesian_jerk: f64) -> &mut Self {
+    fn with_cartesian_jerk(self, _jerk_bound: f64) -> Self {
         self
     }
-    fn with_rotation_velocity(&mut self, rotation_vel: f64) -> &mut Self {
-        self.max_rotation_vel.once(rotation_vel);
+    fn with_rotation_vel(mut self, vel_bound: f64) -> Self {
+        self.max_rotation_vel.once(vel_bound);
         self
     }
-    fn with_rotation_acceleration(&mut self, rotation_acc: f64) -> &mut Self {
-        self.max_rotation_acc.once(rotation_acc);
+    fn with_rotation_acc(mut self, acc_bound: f64) -> Self {
+        self.max_rotation_acc.once(acc_bound);
         self
     }
-    fn with_rotation_jerk(&mut self, _rotation_jerk: f64) -> &mut Self {
+    fn with_rotation_jerk(self, _jerk_bound: f64) -> Self {
         self
     }
 }
 
-impl<T: JakaType, const N: usize> ArmPreplannedMotion<N> for JakaRobot<T, N>
+impl<T, const N: usize> MoveTo<JointSpace<N>> for JakaRobot<T, N>
 where
-    JakaRobot<T, N>: Arm<N>,
     [f64; N]: Serialize + for<'a> Deserialize<'a>,
+    Self: Joints<N>,
 {
-    fn move_joint(&mut self, target: &[f64; N]) -> RobotResult<()> {
-        self.move_joint_async(target)?;
-
-        self.waiting_for_finish()?;
-
-        Ok(())
-    }
-    fn move_joint_async(&mut self, target: &[f64; N]) -> RobotResult<()> {
+    fn move_to(&mut self, target: [f64; N]) -> RobotResult<()> {
         if self.is_moving {
             return Err(RobotException::CommandException(
                 "Robot is moving".to_string(),
@@ -382,23 +251,21 @@ where
 
         let coord = self.coord.get();
         let move_data = JointMoveData::<N> {
-            joint_position: rad_to_deg(*target),
+            joint_position: rad_to_deg(target),
             speed: self.max_vel.get()[0].to_degrees(),
             accel: self.max_acc.get()[0].to_degrees(),
             relflag: u8::from(coord != Coord::OCS),
         };
         self.robot_impl._joint_move(move_data)?;
-
         Ok(())
     }
-    fn move_cartesian(&mut self, target: &Pose) -> RobotResult<()> {
-        self.move_cartesian_async(target)?;
+}
 
-        self.waiting_for_finish()?;
-
-        Ok(())
-    }
-    fn move_cartesian_async(&mut self, target: &Pose) -> RobotResult<()> {
+impl<T, const N: usize> MoveTo<FlangeSpace> for JakaRobot<T, N>
+where
+    [f64; N]: Serialize + for<'a> Deserialize<'a>,
+{
+    fn move_to(&mut self, target: Pose) -> RobotResult<()> {
         if self.is_moving {
             return Err(RobotException::CommandException(
                 "Robot is moving".to_string(),
@@ -406,228 +273,104 @@ where
         }
         self.is_moving = true;
 
-        let mut pose: [f64; 6] = (*target).into();
-
+        let mut pose: [f64; 6] = target.into();
         for i in 0..3 {
-            pose[i] *= 1000.0; // m to mm
+            pose[i] *= 1000.0; // m -> mm
             pose[i + 3] = pose[i + 3].to_degrees();
         }
 
         let coord = self.coord.get();
         let move_data = MoveLData {
             cart_position: pose,
-            speed: self.max_cartesian_vel.get() * 1000.0, // m/s to mm/s
-            accel: self.max_cartesian_acc.get() * 1000.0, // m/s² to mm/s²
+            speed: self.max_cartesian_vel.get() * 1000.0, // m/s -> mm/s
+            accel: self.max_cartesian_acc.get() * 1000.0,
             relflag: u8::from(coord != Coord::OCS),
         };
         self.robot_impl._move_l(move_data)?;
-
         self.is_moving = false;
         Ok(())
     }
 }
 
-impl<T: JakaType, const N: usize> ArmPreplannedPath<N> for JakaRobot<T, N>
+impl<T, const N: usize> MoveTraj<JointSpace<N>> for JakaRobot<T, N>
 where
-    JakaRobot<T, N>: Arm<N>,
-    JakaRobot<T, N>: ArmParam<N>,
     [f64; N]: Serialize + for<'a> Deserialize<'a>,
+    Self: Joints<N>,
 {
-    fn move_traj(&mut self, path: Vec<MotionType<N>>) -> RobotResult<()> {
-        self.move_traj_async(path)?;
-
-        self.waiting_for_finish()?;
-
-        Ok(())
-    }
-
-    fn move_traj_async(&mut self, path: Vec<MotionType<N>>) -> RobotResult<()> {
-        let mut path_iter = path.into_iter();
-        self.move_with_closure(move |_, _| {
-            if let Some(motion) = path_iter.next() {
-                (motion, false)
-            } else {
-                (MotionType::Joint([0.0; N]), true)
+    /// 閻犺櫣鍠栧▓銏＄▔閳ь剟寮堕垾鍐插殥缂佸濮撮惁鎴︽煂閸ャ劎澹夐柣銊ュ閸櫻囨嚍閸屾繂缂撻弶鈺冩缁变即鏌呴幇顒佸櫙闁哄牏鍠嶇粭鍛村矗閹搭垳绀夊璺虹Ф閺併倗鈧湱鍋炲鍌涘閻戞ɑ绠涢柛銉у仩閻箖濡?
+    fn move_traj(&mut self, traj: Vec<[f64; N]>) -> RobotResult<()> {
+        let mut iter = traj.into_iter();
+        <Self as ControlWith<JointPositionControl<N>>>::control_with(self, move |state, _| {
+            match iter.next() {
+                Some(joint) => (joint, false),
+                None => (
+                    <Self as ControlWith<JointPositionControl<N>>>::hold_command(&state),
+                    true,
+                ),
             }
         })
     }
-    fn move_waypoints(&mut self, path: Vec<MotionType<N>>) -> RobotResult<()> {
-        self.move_waypoints_async(path)?;
 
-        self.waiting_for_finish()?;
-
-        Ok(())
-    }
-    fn move_waypoints_async(&mut self, path: Vec<MotionType<N>>) -> RobotResult<()> {
-        match path.first() {
-            Some(MotionType::Joint(first)) => {
-                let mut ruckig = Ruckig::<N, ThrowErrorHandler>::new(None, 1. / JAKA_FREQUENCY);
-
-                let mut input = InputParameter::new(None);
-                let mut output = OutputParameter::new(None);
-
-                input.max_velocity = DataArrayOrVec::Stack(Self::JOINT_VEL_BOUND);
-                input.max_acceleration = DataArrayOrVec::Stack(Self::JOINT_ACC_BOUND);
-
-                input.current_position = DataArrayOrVec::Stack(*first);
-
-                let mut new_path: Vec<MotionType<N>> = Vec::new();
-
-                for target in path {
-                    if let MotionType::Joint(joint) = target {
-                        // 设置当前段的目标
-                        input.target_position = DataArrayOrVec::Stack(joint);
-                        // input.target_velocity = vel; // 通常中间点速度不为0才能平滑过渡，这里需要根据路径策略计算
-                        // 如果希望过点不停车，target_velocity 需要预先根据几何路径计算好方向
-
-                        // 进入实时控制循环
-                        loop {
-                            // 计算下一帧
-                            let result = ruckig.update(&input, &mut output);
-
-                            // 发送 output.new_position 给电机
-                            // 发送 output.new_velocity 给电机 (如果是前馈控制)
-
-                            // **关键**：将输出作为下一次的输入
-                            input.current_position = output.new_position.clone();
-                            input.current_velocity = output.new_velocity.clone();
-                            input.current_acceleration = output.new_acceleration.clone();
-
-                            new_path
-                                .push(MotionType::Joint(*output.new_position.as_array().unwrap()));
-
-                            if let Ok(RuckigResult::Finished) = result {
-                                break; // 到达当前中间点，进入下一个
-                            }
-                        }
-                    } else {
-                        return Err(RobotException::CommandException(
-                            "Only joint waypoints are supported".to_string(),
-                        ));
-                    }
-                }
-
-                self.move_traj_async(new_path)?;
-            }
-            _ => {
-                return Err(RobotException::CommandException(
-                    "Only joint waypoints are supported".to_string(),
-                ));
-            }
-        }
-
-        Ok(())
-    }
-
-    fn move_waypoints_prepare(&mut self, path: Vec<MotionType<N>>) -> RobotResult<()> {
-        self.path = Some(path);
-        Ok(())
-    }
-    fn move_waypoints_start(&mut self, _: MotionType<N>) -> RobotResult<()> {
-        if let Some(path) = self.path.take() {
-            if path.is_empty() {
-                return Err(RobotException::CommandException(
-                    "Path is empty".to_string(),
-                ));
-            }
-            self.move_waypoints_async(path)?;
-        } else {
-            return Err(RobotException::CommandException(
-                "Path is not prepared".to_string(),
-            ));
-        }
-        Ok(())
-    }
-}
-
-pub struct JakaStreamingHandle<const N: usize> {
-    motion: Arc<Mutex<Option<MotionType<N>>>>,
-}
-
-impl<const N: usize> ArmStreamingHandle<N> for JakaStreamingHandle<N> {
-    fn move_to(&mut self, target: MotionType<N>) -> RobotResult<()> {
-        *self.motion.lock().unwrap() = Some(target);
-        Ok(())
-    }
-    fn last_motion(&self) -> Option<MotionType<N>> {
-        unimplemented!()
-    }
-    fn control_with(&mut self, _control: ControlType<N>) -> RobotResult<()> {
-        unimplemented!()
-    }
-    fn last_control(&self) -> Option<ControlType<N>> {
-        unimplemented!()
-    }
-}
-
-impl<T: JakaType, const N: usize> ArmStreamingMotion<N> for JakaRobot<T, N>
-where
-    JakaRobot<T, N>: Arm<N>,
-    [f64; N]: Serialize + for<'a> Deserialize<'a>,
-{
-    type Handle = JakaStreamingHandle<N>;
-
-    fn start_streaming(&mut self) -> RobotResult<Self::Handle> {
-        self.robot_impl._servo_move(ServoMoveData { relflag: 1 })?;
-
-        let motion = Arc::new(Mutex::new(None));
-        // let motion_clone = motion.clone();
-
-        // self.streaming_handle = thread::spawn(move || {
-        //     loop {
-        //         match motion_clone.lock().unwrap().take() {
-        //             Some(MotionType::Joint(joint)) => {
-        //                 let data = ServoJData {
-        //                     joint_angles: rad_to_deg(joint),
-        //                     relflag: 0,
-        //                 };
-        //                 self._servo_j(data).unwrap();
-        //             }
-        //             Some(MotionType::Cartesian(pose)) => {
-        //                 let data = ServoPData {
-        //                     cat_position: pose.into(),
-        //                     relflag: 0,
-        //                 };
-        //                 self._servo_p(data).unwrap();
-        //             }
-        //             _ => {
-        //                 panic!("Invalid motion type");
-        //             }
-        //         }
-        //     }
-        // });
-
-        Ok(JakaStreamingHandle { motion })
-    }
-
-    fn end_streaming(&mut self) -> RobotResult<()> {
-        // TODO
-        self.streaming_handle.thread().unpark();
-        self.robot_impl._servo_move(ServoMoveData { relflag: 0 })?;
-        Ok(())
-    }
-
-    fn move_to_target(&mut self) -> Arc<Mutex<Option<MotionType<N>>>> {
-        unimplemented!()
-    }
-
-    fn control_with_target(&mut self) -> Arc<Mutex<Option<ControlType<N>>>> {
-        unimplemented!()
-    }
-}
-
-// impl ArmStreamingMotionExt for JakaRobot {}
-
-impl<T: JakaType, const N: usize> Realtime for JakaRobot<T, N> {}
-
-impl<T: JakaType, const N: usize> ArmRealtimeControl<N> for JakaRobot<T, N>
-where
-    JakaRobot<T, N>: Arm<N>,
-    [f64; N]: Serialize + for<'a> Deserialize<'a>,
-{
-    fn move_with_closure<FM>(&mut self, closure: FM) -> RobotResult<()>
+    /// JAKA 濡炵懓宕慨鈺呭嫉椤忓嫬鏁剁紓鍐惧枦缁绘稓绱掗锛勭唴鐎垫澘瀚～澶愬礆閹烘垶鐝ら柨娑欒壘缂嶅﹥绋夐埀顒勫礌閺嶎剛鐔呯€?`s 闁?target` 缂傚倸鎼惃顖炲籍閸洘锛?闂侇偆鍠庣€规娊宕洪崫鍕珯闁?
+    /// 濞寸姾顔婄紞宥夊炊閸濆嫮鏆伴梺鎻掓处閻楅亶鎮抽崶顒€鍘撮柡鍕靛灥閸ｎ垶鏌呴悩顔瑰亾閸屾繍鍤為柡鈧崷顓熸殢 [`MoveTraj::move_traj`] 濞戞挸顑呰ぐ鍌氼啅閺屻儱娅氶柡宥囨焿瀵ょ儤娼婚惂鍝ョ闁瑰瓨鐗滈弫?    /// [`MoveTraj::move_waypoints`] 閻?Ruckig 闁革负鍔戝娲嵁閸涱剛鐟撻柟缁樺笩钘熼柕?
+    fn move_path<F>(&mut self, _path: F) -> RobotResult<()>
     where
-        FM: FnMut(ArmState<N>, std::time::Duration) -> (MotionType<N>, bool) + Send + 'static,
+        F: Fn(f64) -> Option<[f64; N]>,
+    {
+        Err(RobotException::UnprocessableInstructionError(
+            "JAKA has no continuous-path planner; use move_traj or move_waypoints".to_string(),
+        ))
+    }
+
+    fn move_waypoints(&mut self, waypoints: Vec<[f64; N]>) -> RobotResult<()> {
+        let Some(first) = waypoints.first().copied() else {
+            return Ok(());
+        };
+
+        let mut ruckig = Ruckig::<N, ThrowErrorHandler>::new(None, 1. / JAKA_FREQUENCY);
+        let mut input = InputParameter::new(None);
+        let mut output = OutputParameter::new(None);
+
+        input.max_velocity = DataArrayOrVec::Stack(<Self as Joints<N>>::JOINT_VEL_BOUND);
+        input.max_acceleration = DataArrayOrVec::Stack(<Self as Joints<N>>::JOINT_ACC_BOUND);
+        input.current_position = DataArrayOrVec::Stack(first);
+
+        let mut dense: Vec<[f64; N]> = Vec::new();
+        for target in waypoints {
+            input.target_position = DataArrayOrVec::Stack(target);
+            loop {
+                let result = ruckig.update(&input, &mut output);
+                input.current_position = output.new_position.clone();
+                input.current_velocity = output.new_velocity.clone();
+                input.current_acceleration = output.new_acceleration.clone();
+                dense.push(*output.new_position.as_array().unwrap());
+                if let Ok(RuckigResult::Finished) = result {
+                    break;
+                }
+            }
+        }
+        self.move_traj(dense)
+    }
+}
+
+impl<T, const N: usize> ControlWith<JointPositionControl<N>> for JakaRobot<T, N>
+where
+    [f64; N]: Serialize + for<'a> Deserialize<'a>,
+{
+    fn hold_command(state: &JointState<N>) -> [f64; N] {
+        state
+            .cmd
+            .q
+            .or(state.des.q)
+            .or(state.meas.q)
+            .unwrap_or([0.; N])
+    }
+
+    /// 闁革负鍔庣€氼厾绮╃€ｎ剙娈犵紒瀣儎缁楀倹娼婚幇顖ｆ斀閻庡湱鍋炲鍌涘閻戞ɑ绠涢柛銉у仩閻箖鏁嶅宕囩闁稿繈鍎板閬嶅嫉瀹ュ枺浣割嚕?闁?闂侇偅鍔曢幊鍡涘嫉閻旀椿鍤㈤柣妯垮煐閳ь兛闄嶉埀顑挎祰閻ㄧ喖鎮?`closure`
+    /// 婵懓鍊风粭鍛▔閳ь剟宕楃€圭姴螡闁圭娲ｉ幎銈夌嵁閺堢數鐟撻柛?闁?闁衡偓鐠哄搫鐓傞悗鐟版湰閸ㄦ岸寮介崶褏绠堕柛姘叄閳ь兘鍋撻柛鎴犲皑缁辨繈鐛捄渚綏缂備礁鐗撻埀顑藉亾闁告垼妗ㄥ閬嶅嫉瀹ュ枺浣割嚕韫囧簼绨板ǎ鍥ㄧ箚閻﹀鈧懓顦崣蹇涘Υ?
+    fn control_with<F>(&mut self, mut closure: F) -> RobotResult<()>
+    where
+        F: FnMut(JointState<N>, Duration) -> ([f64; N], bool) + Send + 'static,
     {
         if self.is_moving {
             return Err(RobotException::CommandException(
@@ -642,25 +385,40 @@ where
         self.streaming_handle = thread::Builder::new()
             .name("jaka-servo-motion".to_string())
             .spawn(move || {
-                if let Err(err) = run_servo_motion_loop(&mut robot, closure, period) {
+                let result = (|| -> RobotResult<()> {
+                    let enter: RobotResult<()> =
+                        robot._servo_move(ServoMoveData { relflag: 1 })?.into();
+                    enter?;
+                    loop {
+                        let tick_start = Instant::now();
+                        let state: ArmState<N> = robot._get_data()?.into();
+                        let (joint, finished) = closure(state.joint, period);
+                        if finished {
+                            return Ok(());
+                        }
+
+                        let applied: RobotResult<()> = robot
+                            ._servo_j(ServoJData::<N> {
+                                joint_angles: rad_to_deg(joint),
+                                relflag: 0,
+                            })?
+                            .into();
+                        applied?;
+
+                        let elapsed = tick_start.elapsed();
+                        if elapsed < period {
+                            sleep(period - elapsed);
+                        }
+                    }
+                })();
+
+                if let Err(err) = result {
                     eprintln!("JAKA realtime servo loop exited with error: {err}");
                 }
+                let _ = robot._servo_move(ServoMoveData { relflag: 0 });
             })
             .map_err(|err| RobotException::RealtimeException(err.to_string()))?;
 
         Ok(())
     }
-    fn control_with_closure<FC>(&mut self, mut _closure: FC) -> RobotResult<()>
-    where
-        FC: FnMut(ArmState<N>, std::time::Duration) -> (ControlType<N>, bool) + Send + 'static,
-    {
-        unimplemented!()
-    }
-}
-
-impl<T: JakaType, const N: usize> ArmRealtimeControlExt<N> for JakaRobot<T, N>
-where
-    JakaRobot<T, N>: Arm<N>,
-    [f64; N]: Serialize + for<'a> Deserialize<'a>,
-{
 }
