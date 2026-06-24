@@ -335,7 +335,8 @@ impl<const N: usize> From<GetDataState> for ArmState<N> {
         let joint: [f64; N] = value.joint_actual_position[..N].try_into().unwrap();
         let joint = joint.map(|f| f.to_radians());
 
-        let cartesian_tran = value.actual_position[0..3].try_into().unwrap();
+        let cartesian_tran: [f64; 3] = value.actual_position[0..3].try_into().unwrap();
+        let cartesian_tran = cartesian_tran.map(|f| f / 1000.0);
         let cartesian_rot: [f64; 3] = value.actual_position[3..6].try_into().unwrap();
         let cartesian_rot = cartesian_rot.map(|f| f.to_radians());
         let pose_o_to_ee = Pose::Euler(cartesian_tran, cartesian_rot);

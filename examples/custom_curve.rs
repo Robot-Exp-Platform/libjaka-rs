@@ -9,7 +9,7 @@ fn main() -> RobotResult<()> {
     robot.enable()?;
 
     // 先移动到曲线起点附近（平移单位：米，姿态单位：弧度）。
-    robot.move_to_sync::<FlangeSpace>(Pose::Euler([0.3, 0.0, 0.03], [-PI, 0.0, PI]))?;
+    robot.move_to::<FlangeSpace>(Pose::Euler([0.3, 0.0, 0.03], [-PI, 0.0, PI]))?;
 
     // 生成圆锥螺旋线轨迹（内部以毫米 / 角度表示）。
     let (_length, curve) = cone_spiral_curve([300.0, 0.0, 30.0], 60.0, 3, 0.3, 0.3);
@@ -18,7 +18,7 @@ fn main() -> RobotResult<()> {
     const SAMPLES: usize = 200;
     for i in 0..=SAMPLES {
         let progress = i as f64 / SAMPLES as f64;
-        robot.move_to_sync::<FlangeSpace>(to_si(curve(progress)))?;
+        robot.move_to::<FlangeSpace>(to_si(curve(progress)))?;
     }
 
     Ok(())

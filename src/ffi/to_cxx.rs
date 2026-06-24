@@ -113,7 +113,7 @@ impl JakaMini2 {
     }
 
     fn move_joint_sync(&mut self, target: [f64; 6]) -> RobotResult<()> {
-        <crate::JakaMini2 as MoveTo<JointSpace<6>>>::move_to_sync(&mut self.0, target)
+        <crate::JakaMini2 as MoveTo<JointSpace<6>>>::move_to(&mut self.0, target)
     }
 
     fn move_flange(&mut self, target: CxxPoseData) -> RobotResult<()> {
@@ -121,7 +121,7 @@ impl JakaMini2 {
     }
 
     fn move_flange_sync(&mut self, target: CxxPoseData) -> RobotResult<()> {
-        <crate::JakaMini2 as MoveTo<FlangeSpace>>::move_to_sync(&mut self.0, cxx_to_pose(target)?)
+        <crate::JakaMini2 as MoveTo<FlangeSpace>>::move_to(&mut self.0, cxx_to_pose(target)?)
     }
 }
 
