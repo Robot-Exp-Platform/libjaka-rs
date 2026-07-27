@@ -491,7 +491,7 @@ pub type SetUserOffsetsResponse = Response<{ Command::SetUserOffsets }, SetUserO
 pub type SetUserOffsetsState = DefaultState;
 #[derive(Serialize, Deserialize)]
 pub struct SetUserOffsetsData {
-    pub useroffset: [f64; 6], //鏂囨。涓殑鍙橀噺鍚嶆湁鎷煎啓閿欒
+    pub useroffset: [f64; 6], // The vendor documentation misspells this variable name.
     pub id: u8,
     pub name: String,
 }
@@ -502,7 +502,7 @@ pub type SetUserIdResponse = Response<{ Command::SetUserId }, SetUserIdState>;
 pub type SetUserIdState = DefaultState;
 #[derive(Serialize, Deserialize)]
 pub struct SetUserIdData {
-    pub user_frame_id: u8, //鏂囨。涓殑鍙橀噺鍚嶈鏄庢湁閿欒
+    pub user_frame_id: u8, // The vendor documentation describes this variable name incorrectly.
 }
 
 // get extio status
