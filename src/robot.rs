@@ -1,9 +1,10 @@
 use crate::{JAKA_FREQUENCY, JAKA_VERSION, network::NetWork, robot_impl::RobotImpl, types::*};
 
 use robot_behavior::{
-    Arm, ArmState, CartesianPoseControl, ControlObservation, ControlObserver, ControlWith, Coord,
-    EndPoint, FlangeSpace, JointPositionControl, JointSpace, JointState, Joints, LoadState, MoveTo,
-    MoveTraj, OverrideOnce, Pose, Robot, RobotException, RobotResult, utils::rad_to_deg,
+    Arm, ArmState, CartesianPoseControl, ControlObservation, ControlObserver, ControlStep,
+    ControlWith, Coord, EndPoint, FlangeSpace, JointPositionControl, JointSpace, JointState,
+    Joints, LoadState, MoveTo, MoveTraj, OverrideOnce, Pose, Robot, RobotException, RobotResult,
+    utils::rad_to_deg,
 };
 use rsruckig::{
     error::ThrowErrorHandler,
@@ -15,6 +16,7 @@ use rsruckig::{
 use serde::{Deserialize, Serialize};
 use std::{
     marker::PhantomData,
+    ops::ControlFlow,
     sync::{Arc, Mutex, RwLock},
     thread::{self, sleep},
     time::{Duration, Instant},
@@ -440,9 +442,10 @@ where
     /// 每个周期读取机器人状态，将其中的关节状态传给 `closure`，再把
     /// 闭包返回的目标关节角发送给控制器。闭包返回 `done = true` 时，
     /// 当前周期命令仍会先下发，然后退出伺服模式。
-    fn control_with<F>(&mut self, mut closure: F) -> RobotResult<()>
+    /// `Break(())` 则不发送本周期命令，直接执行伺服退出协议。
+    fn control_with_flow<F>(&mut self, mut closure: F) -> RobotResult<()>
     where
-        F: FnMut(JointState<N>, Duration) -> ([f64; N], bool),
+        F: FnMut(JointState<N>, Duration) -> ControlStep<[f64; N]>,
     {
         if self.is_moving {
             return Err(RobotException::CommandException(
@@ -468,8 +471,11 @@ where
                     .unwrap_or_else(|poisoned| poisoned.into_inner())
                     .clone();
                 notify_control_observers(&before_observers, &full_state, period);
-                let (joint, finished) = closure(state.joint, period);
+                let step = closure(state.joint, period);
                 notify_control_observers(&after_observers, &full_state, period);
+                let ControlFlow::Continue((joint, finished)) = step else {
+                    return Ok(());
+                };
 
                 let applied: RobotResult<()> = robot
                     ._servo_j(ServoJData::<N> { joint_angles: rad_to_deg(joint), relflag: 0 })?
@@ -492,12 +498,12 @@ where
             Err(err) => Err(err),
         };
         self.is_moving = false;
-        match result {
-            Ok(()) => stop_result,
-            Err(err) => {
-                let _ = stop_result;
-                Err(err)
-            }
+        match (result, stop_result) {
+            (Ok(()), result) | (result, Ok(())) => result,
+            (Err(primary), Err(cleanup)) => Err(RobotException::ControlSession {
+                primary: Box::new(primary),
+                cleanup: Box::new(cleanup),
+            }),
         }
     }
 }
@@ -521,9 +527,10 @@ where
     /// 每个周期读取完整 [`ArmState`]，将闭包返回的法兰位姿从
     /// `robot_behavior` 约定的米/弧度转换为 JAKA 使用的毫米/角度后下发。
     /// 与关节控制一致，`done = true` 的周期仍会先发送命令再退出。
-    fn control_with<F>(&mut self, mut closure: F) -> RobotResult<()>
+    /// `Break(())` 则不发送本周期命令，直接执行伺服退出协议。
+    fn control_with_flow<F>(&mut self, mut closure: F) -> RobotResult<()>
     where
-        F: FnMut(ArmState<N>, Duration) -> (Pose, bool),
+        F: FnMut(ArmState<N>, Duration) -> ControlStep<Pose>,
     {
         if self.is_moving {
             return Err(RobotException::CommandException(
@@ -549,8 +556,11 @@ where
                     .unwrap_or_else(|poisoned| poisoned.into_inner())
                     .clone();
                 notify_control_observers(&before_observers, &full_state, period);
-                let (pose, finished) = closure(state, period);
+                let step = closure(state, period);
                 notify_control_observers(&after_observers, &full_state, period);
+                let ControlFlow::Continue((pose, finished)) = step else {
+                    return Ok(());
+                };
 
                 let applied: RobotResult<()> = robot
                     ._servo_p(ServoPData { cat_position: pose_to_jaka_cart(pose), relflag: 0 })?
@@ -573,12 +583,12 @@ where
             Err(err) => Err(err),
         };
         self.is_moving = false;
-        match result {
-            Ok(()) => stop_result,
-            Err(err) => {
-                let _ = stop_result;
-                Err(err)
-            }
+        match (result, stop_result) {
+            (Ok(()), result) | (result, Ok(())) => result,
+            (Err(primary), Err(cleanup)) => Err(RobotException::ControlSession {
+                primary: Box::new(primary),
+                cleanup: Box::new(cleanup),
+            }),
         }
     }
 }
@@ -593,3 +603,7 @@ fn pose_to_jaka_cart(pose: Pose) -> [f64; 6] {
     }
     cart
 }
+
+#[cfg(test)]
+#[path = "control_flow_tests.rs"]
+mod control_flow_tests;
