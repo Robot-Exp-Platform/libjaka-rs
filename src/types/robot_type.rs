@@ -855,7 +855,8 @@ where
         value.to_string()
     }
     fn deserialize(data: &str) -> RobotResult<Self> {
-        let mut value: Value = serde_json::from_str(data).unwrap();
+        let mut value: Value = serde_json::from_str(data)
+            .map_err(|e| RobotException::DeserializeError(e.to_string()))?;
         if let Value::Object(obj) = &mut value {
             obj.remove("cmdName");
         }
@@ -885,7 +886,8 @@ where
         value.to_string()
     }
     fn deserialize(data: &str) -> RobotResult<Self> {
-        let mut value: Value = serde_json::from_str(data).unwrap();
+        let mut value: Value = serde_json::from_str(data)
+            .map_err(|e| RobotException::DeserializeError(e.to_string()))?;
         if let Value::Object(obj) = &mut value {
             obj.remove("cmdName");
         }
@@ -896,4 +898,78 @@ where
 }
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+    use super::{CommandSerde, PowerOnResponse, ServoMoveRequest};
+    use robot_behavior::RobotException;
+
+    fn assert_deserialize_error<T>(result: Result<T, RobotException>) {
+        assert!(matches!(result, Err(RobotException::DeserializeError(_))));
+    }
+
+    #[test]
+    fn request_rejects_invalid_json_without_panicking() {
+        for data in [
+            "",
+            "not json",
+            "{",
+            r#"{"cmdName":"servo_move","relFlag":1"#,
+        ] {
+            assert_deserialize_error(ServoMoveRequest::deserialize(data));
+        }
+        assert_deserialize_error(ServoMoveRequest::deserialize(
+            r#"{"cmdName":"servo_move","relFlag":"invalid"}"#,
+        ));
+    }
+
+    #[test]
+    fn response_rejects_invalid_json_without_panicking() {
+        for data in [
+            "",
+            "not json",
+            "{",
+            r#"{"cmdName":"power_on","errorCode":"0""#,
+        ] {
+            assert_deserialize_error(PowerOnResponse::deserialize(data));
+        }
+        assert_deserialize_error(PowerOnResponse::deserialize(
+            r#"{"cmdName":"power_on","errorCode":false,"errorMsg":""}"#,
+        ));
+    }
+
+    #[test]
+    fn request_preserves_valid_payload_and_roundtrip() {
+        let request = ServoMoveRequest::deserialize(r#"{"cmdName":"servo_move","relFlag":1}"#)
+            .expect("valid request");
+        assert_eq!(request.data.relflag, 1);
+        let encoded = request.serialize();
+        assert_eq!(
+            serde_json::from_str::<serde_json::Value>(&encoded).unwrap(),
+            serde_json::json!({"cmdName": "servo_move", "relFlag": 1}),
+        );
+        assert_eq!(
+            ServoMoveRequest::deserialize(&encoded)
+                .unwrap()
+                .data
+                .relflag,
+            1
+        );
+    }
+
+    #[test]
+    fn response_preserves_valid_payload_and_roundtrip() {
+        let response = PowerOnResponse::deserialize(
+            r#"{"cmdName":"power_on","errorCode":"0","errorMsg":"ok"}"#,
+        )
+        .expect("valid response");
+        assert_eq!(response.state.error_code, "0");
+        assert_eq!(response.state.error_msg, "ok");
+        let encoded = response.serialize();
+        assert_eq!(
+            serde_json::from_str::<serde_json::Value>(&encoded).unwrap(),
+            serde_json::json!({"cmdName": "power_on", "errorCode": "0", "errorMsg": "ok"}),
+        );
+        let decoded = PowerOnResponse::deserialize(&encoded).unwrap();
+        assert_eq!(decoded.state.error_code, "0");
+        assert_eq!(decoded.state.error_msg, "ok");
+    }
+}

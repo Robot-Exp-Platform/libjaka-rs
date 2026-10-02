@@ -15,6 +15,11 @@ pub struct NetWork {
 }
 
 impl NetWork {
+    #[cfg(test)]
+    pub(crate) fn from_test_stream(stream: TcpStream) -> Self {
+        Self { tcp_cmd: Some(Arc::new(Mutex::new(stream))) }
+    }
+
     pub fn new(ip: &str) -> NetWork {
         let tcp_cmd = Some(Arc::new(Mutex::new(
             TcpStream::connect(format!("{ip}:{PORT_CMD}")).unwrap(),
@@ -61,13 +66,14 @@ impl NetWork {
             let data = data.serialize();
             #[cfg(feature = "debug")]
             println!("Sending command: {}", data);
-            tcp_cmd.lock().unwrap().write_all(data.as_bytes()).unwrap();
+            tcp_cmd.lock().unwrap().write_all(data.as_bytes())?;
             let mut buffer = [0; 1024 * 10];
-            let size = tcp_cmd.lock().unwrap().read(&mut buffer).unwrap();
-            let data = std::str::from_utf8(&buffer[..size]).unwrap();
+            let size = tcp_cmd.lock().unwrap().read(&mut buffer)?;
+            let data = std::str::from_utf8(&buffer[..size])
+                .map_err(|err| RobotException::DeserializeError(err.to_string()))?;
             #[cfg(feature = "debug")]
             println!("Received response: {}", data);
-            let data = S::deserialize(data).unwrap();
+            let data = S::deserialize(data)?;
             Ok(data)
         } else {
             Err(RobotException::NetworkError(
