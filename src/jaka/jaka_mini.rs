@@ -1,6 +1,7 @@
 use std::f64::consts::{FRAC_PI_2, FRAC_PI_3, PI};
 
-use robot_behavior::{ArmForwardKinematics, DhParam, EndPoint, Joints, RobotDescription};
+use roplat_behavior::{EndPoint, Joints, RobotDescription};
+use roplat_kinematics::{ArmForwardKinematics, DhParam};
 
 use crate::JakaRobot;
 
@@ -51,10 +52,11 @@ impl ArmForwardKinematics<6> for JakaMini2 {
         DhParam::Iso3RPY { pos: [0., 0.1593, 0.], rpy: [-FRAC_PI_2, 0., 0.] },
     ];
 }
+roplat_kinematics::dh_kinematics!(JakaMini2, 6);
 
 #[cfg(test)]
 mod tests {
-    use robot_behavior::ArmForwardKinematics;
+    use roplat_kinematics::ArmForwardKinematics;
 
     use super::*;
 

@@ -2,7 +2,7 @@ use libjaka::{
     JakaMini2,
     types::{TioVout, TioVoutMode},
 };
-use robot_behavior::{RobotResult, behavior::*};
+use roplat_behavior::{RobotResult, behavior::*};
 
 fn main() -> RobotResult<()> {
     let mut robot = JakaMini2::new("10.5.5.100");

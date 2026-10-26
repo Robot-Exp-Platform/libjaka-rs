@@ -2,7 +2,7 @@
 
 [English](README.md) | [简体中文](README_cn.md)
 
-`libjaka` is an unofficial Rust driver for JAKA controllers. It sends TCP/JSON commands and adapts them to [`robot_behavior`](https://github.com/Robot-Exp-Platform/robot_behavior), letting applications share typed motion and control interfaces with other Robot-Exp drivers.
+`libjaka` is an unofficial Rust driver for JAKA controllers. It sends TCP/JSON commands and adapts them to [`roplat_behavior`](https://github.com/Robot-Exp-Platform/roplat_behavior), letting applications share typed motion and control interfaces with other Robot-Exp drivers.
 
 The published crate is **`libjaka 0.2.0`**. It implements controller queries, target motion, and joint-position/Cartesian-pose servo sessions. Model aliases supply parameters and types; their presence does not certify every model/firmware combination.
 
@@ -20,11 +20,13 @@ Create a binary project with `cargo new jaka-read-state`, then add:
 
 ```toml
 [dependencies]
-libjaka = "0.2.0"
-robot_behavior = "0.6.1"
+libjaka = "0.5.0"
+roplat_behavior = "0.9.0"
 ```
 
-Use Rust nightly: the crates use unstable Rust features. The direct behavior dependency provides the imported traits and selects the 0.6.1 fixes. Registry installation needs neither the parent `drives` workspace nor a separate JAKA C/C++ SDK.
+> `roplat_behavior` 0.9 (the renamed `robot_behavior`) and this release are not on crates.io yet; until they are, build from the [drives](https://github.com/Robot-Exp-Platform/drives) workspace. See the [migration notes](https://github.com/Robot-Exp-Platform/roplat_behavior/blob/main/MIGRATION.md).
+
+Use Rust nightly: the crates use unstable Rust features. The direct behavior dependency provides the imported traits. Registry installation needs neither the parent `drives` workspace nor a separate JAKA C/C++ SDK.
 
 The controller must expose the compatible TCP/JSON command service on port **10001**, reachable from the host. State and motion permissions depend on its configuration. This release does not declare a verified host OS/controller firmware matrix.
 
@@ -35,7 +37,7 @@ The controller must expose the compatible TCP/JSON command service on port **100
 | `to_py` | PyO3 bindings; requires a Python development environment. |
 | `to_cxx` | CXX bindings; requires a C++ toolchain. |
 
-Binding features are not complete deployment packages. To use Roplat's `ControlRhythm`, enable `roplat` on **`robot_behavior`**, not on `libjaka`.
+Binding features are not complete deployment packages. To use Roplat's `ControlRhythm`, enable `roplat` on **`roplat_behavior`**, not on `libjaka`.
 
 ## First program: query arm state
 
@@ -43,7 +45,7 @@ Put this in `src/main.rs`. Replace the address before deliberately running it. I
 
 ```rust,no_run
 use libjaka::JakaMini2;
-use robot_behavior::{Arm, RobotResult};
+use roplat_behavior::{Arm, RobotResult};
 
 fn main() -> RobotResult<()> {
     let mut robot = JakaMini2::new("10.5.5.100");
@@ -78,13 +80,13 @@ Both `control_with_flow` and `control_with_flow_async` block for the complete se
 
 - [Examples](examples) cover trajectories, Cartesian motion, observations, models, and I/O. Read older cache-based `read_state` examples with the distinction above in mind.
 - [Robot implementation](src/robot.rs), [device commands](src/robot_impl.rs), and [published API](https://docs.rs/libjaka/0.2.0/libjaka/) describe supported capabilities.
-- [Behavior documentation](https://github.com/Robot-Exp-Platform/robot_behavior) covers reusable traits and Roplat integration.
+- [Behavior documentation](https://github.com/Robot-Exp-Platform/roplat_behavior) covers reusable traits and Roplat integration.
 - [Loopback tests](src/control_flow_tests.rs) check JSON/servo loops without a robot, not device timing or firmware coverage.
 
 This version implements joint-position and Cartesian-pose control, but no native `AsyncControlWith` session. Constructor error handling and the inactive state-stream cache remain limitations.
 
 ## Source builds, assets, and license
 
-Checkout manifests pin development dependencies to Git revisions and require source access; registry users do not need a sibling workspace. Model assets are excluded from the published crate; see [the asset module](src/assets.rs) for explicit retrieval. `ROPLAT_SKIP_ASSET_EXPORT=1` skips optional build-time asset export during checks and CI.
+Checkout manifests use the same crates.io dependencies as the published crate; neither route needs a sibling workspace. Model assets are excluded from the published crate; see [the asset module](src/assets.rs) for explicit retrieval. `ROPLAT_SKIP_ASSET_EXPORT=1` skips optional build-time asset export during checks and CI.
 
 The Rust driver is maintained by Robot-Exp-Platform under [Apache-2.0](LICENSE). JAKA is the manufacturer's name; this project is unofficial. Separately obtained model assets and vendor software retain their attribution and terms.
