@@ -85,6 +85,6 @@ cargo +nightly check
 
 ## 源码、资源与许可
 
-checkout manifest 将开发依赖固定到 Git revision，需要源码访问权限；registry 用户不需要相邻工作区。模型资源不包含在已发布 crate 中，显式获取方式见[资源模块](src/assets.rs)。检查和 CI 可设置 `ROPLAT_SKIP_ASSET_EXPORT=1` 跳过构建时的可选资源导出。
+checkout manifest 与已发布 crate 使用相同的 crates.io 依赖，两种方式都不需要相邻工作区。模型资源不包含在已发布 crate 中，显式获取方式见[资源模块](src/assets.rs)。检查和 CI 可设置 `ROPLAT_SKIP_ASSET_EXPORT=1` 跳过构建时的可选资源导出。
 
 Rust 驱动由 Robot-Exp-Platform 维护，使用 [Apache-2.0](LICENSE)。JAKA 是设备厂商名称，本项目是非官方实现。另行获取的模型资源和厂商软件保留各自归属与条款。

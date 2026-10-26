@@ -85,6 +85,6 @@ This version implements joint-position and Cartesian-pose control, but no native
 
 ## Source builds, assets, and license
 
-Checkout manifests pin development dependencies to Git revisions and require source access; registry users do not need a sibling workspace. Model assets are excluded from the published crate; see [the asset module](src/assets.rs) for explicit retrieval. `ROPLAT_SKIP_ASSET_EXPORT=1` skips optional build-time asset export during checks and CI.
+Checkout manifests use the same crates.io dependencies as the published crate; neither route needs a sibling workspace. Model assets are excluded from the published crate; see [the asset module](src/assets.rs) for explicit retrieval. `ROPLAT_SKIP_ASSET_EXPORT=1` skips optional build-time asset export during checks and CI.
 
 The Rust driver is maintained by Robot-Exp-Platform under [Apache-2.0](LICENSE). JAKA is the manufacturer's name; this project is unofficial. Separately obtained model assets and vendor software retain their attribution and terms.
