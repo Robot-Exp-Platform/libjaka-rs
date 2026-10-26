@@ -4,7 +4,6 @@ use roplat_behavior::{
     Arm, ArmState, CartesianPoseControl, ControlObservation, ControlObserver, ControlStep,
     ControlWith, Coord, EndPoint, FlangeSpace, JointPositionControl, JointSpace, JointState,
     Joints, LoadState, MoveTo, MoveTraj, OverrideOnce, Pose, Robot, RobotException, RobotResult,
-    utils::rad_to_deg,
 };
 use rsruckig::{
     error::ThrowErrorHandler,
@@ -325,7 +324,7 @@ where
         }
         let coord = self.coord.get();
         let move_data = JointMoveData::<N> {
-            joint_position: rad_to_deg(target),
+            joint_position: target.map(f64::to_degrees),
             speed: self.max_vel.get()[0].to_degrees(),
             accel: self.max_acc.get()[0].to_degrees(),
             relflag: u8::from(coord != Coord::OCS),
@@ -478,7 +477,7 @@ where
                 };
 
                 let applied: RobotResult<()> = robot
-                    ._servo_j(ServoJData::<N> { joint_angles: rad_to_deg(joint), relflag: 0 })?
+                    ._servo_j(ServoJData::<N> { joint_angles: joint.map(f64::to_degrees), relflag: 0 })?
                     .into();
                 applied?;
 
