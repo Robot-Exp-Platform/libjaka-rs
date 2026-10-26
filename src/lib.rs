@@ -20,15 +20,15 @@ pub use robot::*;
 #[pyo3::pymodule]
 mod libjaka {
     // use pyo3::types::PyAnyMethods;
-    // use robot_behavior::ArmState;
+    // use roplat_behavior::ArmState;
     // use std::time::Duration;
 
     #[pymodule_export]
     use super::ffi::to_py::PyJakaMini2;
     #[pymodule_export]
-    use robot_behavior::{
-        LoadState, PyArmState, PyJointSample, PyJointState, PyMotionType, PyPose, PySpatialSample,
-        PySpatialState,
+    use roplat_behavior::{
+        PyArmState, PyJointSample, PyJointState, PyLoadState, PyMotionType, PyPose,
+        PySpatialSample, PySpatialState,
     };
 
     // #[pyo3::pyfunction]

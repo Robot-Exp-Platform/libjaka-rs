@@ -4,7 +4,7 @@ use std::{
 };
 
 use libjaka::JakaMini2;
-use robot_behavior::{RobotResult, behavior::*};
+use roplat_behavior::{RobotResult, behavior::*};
 
 fn main() -> RobotResult<()> {
     let mut robot = JakaMini2::new("10.5.5.100");
@@ -28,7 +28,7 @@ fn main() -> RobotResult<()> {
     let mut elapsed = Duration::ZERO;
     let mut target = None;
     robot.control_with::<JointPositionControl<6>, _>(move |state, dt| {
-        let target = *target.get_or_insert_with(|| state.meas.q.unwrap_or([0.0; 6]));
+        let target = *target.get_or_insert_with(|| state.meas.q().unwrap_or([0.0; 6]));
         elapsed += dt;
         (target, elapsed >= Duration::from_secs(2))
     })?;

@@ -1,6 +1,7 @@
 use std::f64::consts::{FRAC_PI_2, PI};
 
-use robot_behavior::{ArmForwardKinematics, DhParam, EndPoint, Joints, to_radians_array};
+use roplat_behavior::{EndPoint, Joints, to_radians_array};
+use roplat_kinematics::{ArmForwardKinematics, DhParam};
 
 use crate::JakaRobot;
 
@@ -35,3 +36,4 @@ impl ArmForwardKinematics<6> for JakaA12L {
         DhParam::DH { theta: 0., d: 0.1338, r: 0., alpha: 0. },
     ];
 }
+roplat_kinematics::dh_kinematics!(JakaA12L, 6);

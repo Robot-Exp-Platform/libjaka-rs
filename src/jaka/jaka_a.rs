@@ -1,8 +1,7 @@
 use std::f64::consts::{FRAC_PI_2, PI};
 
-use robot_behavior::{
-    ArmForwardKinematics, DhParam, EndPoint, Joints, RobotDescription, to_radians_array,
-};
+use roplat_behavior::{EndPoint, Joints, RobotDescription, to_radians_array};
+use roplat_kinematics::{ArmForwardKinematics, DhParam};
 
 use crate::JakaRobot;
 
@@ -44,6 +43,7 @@ impl ArmForwardKinematics<6> for JakaA5 {
         DhParam::DH { theta: 0., d: 0.107, r: 0., alpha: 0. },
     ];
 }
+roplat_kinematics::dh_kinematics!(JakaA5, 6);
 
 impl RobotDescription for JakaA12 {
     const URDF: Option<&'static str> = Some("jaka/jaka_a12.urdf");
@@ -75,6 +75,7 @@ impl ArmForwardKinematics<6> for JakaA12 {
         DhParam::DH { theta: 0., d: 0.1035, r: 0., alpha: 0. },
     ];
 }
+roplat_kinematics::dh_kinematics!(JakaA12, 6);
 
 impl RobotDescription for JakaA20 {
     const URDF: Option<&'static str> = Some("jaka/jaka_a20.urdf");
@@ -106,3 +107,4 @@ impl ArmForwardKinematics<6> for JakaA20 {
         DhParam::DH { theta: 0., d: 0.1205, r: 0., alpha: 0. },
     ];
 }
+roplat_kinematics::dh_kinematics!(JakaA20, 6);

@@ -1,5 +1,5 @@
 use crate::{network::NetWork, types::*};
-use robot_behavior::RobotResult;
+use roplat_behavior::RobotResult;
 use serde::{Deserialize, Serialize};
 
 #[derive(Default, Clone)]

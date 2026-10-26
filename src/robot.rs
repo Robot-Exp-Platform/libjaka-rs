@@ -1,6 +1,6 @@
 use crate::{JAKA_FREQUENCY, JAKA_VERSION, network::NetWork, robot_impl::RobotImpl, types::*};
 
-use robot_behavior::{
+use roplat_behavior::{
     Arm, ArmState, CartesianPoseControl, ControlObservation, ControlObserver, ControlStep,
     ControlWith, Coord, EndPoint, FlangeSpace, JointPositionControl, JointSpace, JointState,
     Joints, LoadState, MoveTo, MoveTraj, OverrideOnce, Pose, Robot, RobotException, RobotResult,
@@ -44,9 +44,9 @@ fn notify_control_observers(
 ///
 /// `T` 是具体机器人型号标记，`N` 是关节数量。该类型同时实现
 /// [`Robot`]、[`Arm`]、[`MoveTo`]、[`MoveTraj`] 和 [`ControlWith`] 等
-/// `robot_behavior` 行为特征，把 JAKA TCP/JSON 指令转换为统一的行为接口。
+/// `roplat_behavior` 行为特征，把 JAKA TCP/JSON 指令转换为统一的行为接口。
 ///
-/// 外部调用应优先使用 `robot_behavior::behavior::*` 中的统一入口，例如
+/// 外部调用应优先使用 `roplat_behavior::behavior::*` 中的统一入口，例如
 /// `move_to::<JointSpace<N>>()` 和 `control_with::<JointPositionControl<N>, _>()`。
 pub struct JakaRobot<T, const N: usize> {
     pub(crate) marker: PhantomData<T>,
@@ -251,7 +251,7 @@ where
         Ok(data.into())
     }
     fn set_load(&mut self, load: LoadState) -> RobotResult<()> {
-        let set_load_data = SetPayloadData { mass: load.m, centroid: load.x };
+        let set_load_data = SetPayloadData { mass: load.mass, centroid: load.center_of_mass };
         self.robot_impl._set_payload(set_load_data)?.into()
     }
 
@@ -259,14 +259,14 @@ where
         let mut robot_impl = self.robot_impl.clone();
         robot_impl
             ._get_data()
-            .map(|data| Into::<ArmState<N>>::into(data).joint.meas.q.unwrap())
+            .map(|data| Into::<ArmState<N>>::into(data).joint.meas.q().unwrap())
             .unwrap_or([0.; N])
     }
     fn get_endpoint(&self) -> Pose {
         let mut robot_impl = self.robot_impl.clone();
         robot_impl
             ._get_data()
-            .map(|data| Into::<ArmState<N>>::into(data).flange.meas.pose.unwrap())
+            .map(|data| Into::<ArmState<N>>::into(data).flange.meas.pose().unwrap())
             .unwrap_or_default()
     }
 
@@ -431,9 +431,9 @@ where
     fn hold_command(state: &JointState<N>) -> [f64; N] {
         state
             .cmd
-            .q
-            .or(state.des.q)
-            .or(state.meas.q)
+            .q()
+            .or(state.des.q())
+            .or(state.meas.q())
             .unwrap_or([0.; N])
     }
 
@@ -516,16 +516,16 @@ where
         state
             .flange
             .cmd
-            .pose
-            .or(state.flange.des.pose)
-            .or(state.flange.meas.pose)
+            .pose()
+            .or(state.flange.des.pose())
+            .or(state.flange.meas.pose())
             .unwrap_or_default()
     }
 
     /// 使用 JAKA `servo_p` 通道执行阻塞的笛卡尔位姿实时控制。
     ///
     /// 每个周期读取完整 [`ArmState`]，将闭包返回的法兰位姿从
-    /// `robot_behavior` 约定的米/弧度转换为 JAKA 使用的毫米/角度后下发。
+    /// `roplat_behavior` 约定的米/弧度转换为 JAKA 使用的毫米/角度后下发。
     /// 与关节控制一致，`done = true` 的周期仍会先发送命令再退出。
     /// `Break(())` 则不发送本周期命令，直接执行伺服退出协议。
     fn control_with_flow<F>(&mut self, mut closure: F) -> RobotResult<()>
@@ -593,7 +593,7 @@ where
     }
 }
 
-/// 将 `robot_behavior` 的位姿单位（米/弧度）转换为 JAKA 笛卡尔指令单位
+/// 将 `roplat_behavior` 的位姿单位（米/弧度）转换为 JAKA 笛卡尔指令单位
 /// （毫米/角度）。
 fn pose_to_jaka_cart(pose: Pose) -> [f64; 6] {
     let mut cart: [f64; 6] = pose.into();

@@ -2,7 +2,7 @@
 
 [English](README.md) | [简体中文](README_cn.md)
 
-`libjaka` 是 JAKA 控制器的非官方 Rust 驱动，通过 TCP/JSON 发送指令并适配 [`robot_behavior`](https://github.com/Robot-Exp-Platform/robot_behavior)，使应用能与其他 Robot-Exp 驱动共享带类型的运动和控制接口。
+`libjaka` 是 JAKA 控制器的非官方 Rust 驱动，通过 TCP/JSON 发送指令并适配 [`roplat_behavior`](https://github.com/Robot-Exp-Platform/roplat_behavior)，使应用能与其他 Robot-Exp 驱动共享带类型的运动和控制接口。
 
 已发布版本为 **`libjaka 0.2.0`**，实现了控制器查询、目标运动，以及关节位置/笛卡尔位姿 servo 会话。机型别名提供参数和类型，不代表每种机型、固件组合均已验收。
 
@@ -20,11 +20,13 @@
 
 ```toml
 [dependencies]
-libjaka = "0.2.0"
-robot_behavior = "0.6.1"
+libjaka = "0.5.0"
+roplat_behavior = "0.9.0"
 ```
 
-使用 Rust nightly，相关 crate 使用不稳定 Rust 特性。直接依赖行为库可导入 trait，并选择 0.6.1 修复。registry 安装不需要父级 `drives` 工作区，也不要求另装 JAKA C/C++ SDK。
+> `roplat_behavior` 0.9（由 `robot_behavior` 改名）与本版本尚未发布到 crates.io；发布前请使用 [drives](https://github.com/Robot-Exp-Platform/drives) 工作区源码。变更见[迁移说明](https://github.com/Robot-Exp-Platform/roplat_behavior/blob/main/MIGRATION_zh.md)。
+
+使用 Rust nightly，相关 crate 使用不稳定 Rust 特性。直接依赖行为库可导入 trait。registry 安装不需要父级 `drives` 工作区，也不要求另装 JAKA C/C++ SDK。
 
 控制器需提供兼容的 TCP/JSON 指令服务，且主机可访问 **10001** 端口。状态和运动权限取决于设备配置。本版本没有声明经过验证的主机操作系统/控制器固件矩阵。
 
@@ -35,7 +37,7 @@ robot_behavior = "0.6.1"
 | `to_py` | PyO3 绑定，需要 Python 开发环境。 |
 | `to_cxx` | CXX 绑定，需要 C++ 工具链。 |
 
-绑定 feature 不是完整部署包。使用 Roplat 的 `ControlRhythm` 时，应在 **`robot_behavior`** 上启用 `roplat`，而不是在 `libjaka` 上启用。
+绑定 feature 不是完整部署包。使用 Roplat 的 `ControlRhythm` 时，应在 **`roplat_behavior`** 上启用 `roplat`，而不是在 `libjaka` 上启用。
 
 ## 第一个程序：查询机械臂状态
 
@@ -43,7 +45,7 @@ robot_behavior = "0.6.1"
 
 ```rust,no_run
 use libjaka::JakaMini2;
-use robot_behavior::{Arm, RobotResult};
+use roplat_behavior::{Arm, RobotResult};
 
 fn main() -> RobotResult<()> {
     let mut robot = JakaMini2::new("10.5.5.100");
@@ -78,7 +80,7 @@ cargo +nightly check
 
 - [示例目录](examples)包含轨迹、笛卡尔运动、观测、模型和 I/O；旧的 `read_state` 缓存示例应结合前述区别阅读。
 - [机器人实现](src/robot.rs)、[设备指令](src/robot_impl.rs)与[已发布 API](https://docs.rs/libjaka/0.2.0/libjaka/)说明已支持的能力。
-- [行为库文档](https://github.com/Robot-Exp-Platform/robot_behavior)说明通用 trait 与 Roplat 集成。
+- [行为库文档](https://github.com/Robot-Exp-Platform/roplat_behavior)说明通用 trait 与 Roplat 集成。
 - [Loopback 测试](src/control_flow_tests.rs)在无机器人条件下检查 JSON/servo 循环，不验证设备时序或固件覆盖。
 
 本版本实现了关节位置和笛卡尔位姿控制，但没有原生 `AsyncControlWith` 会话。构造器错误处理及未启用的状态流缓存仍是限制。

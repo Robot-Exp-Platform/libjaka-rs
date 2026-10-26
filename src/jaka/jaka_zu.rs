@@ -1,8 +1,7 @@
 use std::f64::consts::{FRAC_PI_2, PI};
 
-use robot_behavior::{
-    ArmForwardKinematics, DhParam, EndPoint, Joints, RobotDescription, to_radians_array,
-};
+use roplat_behavior::{EndPoint, Joints, RobotDescription, to_radians_array};
+use roplat_kinematics::{ArmForwardKinematics, DhParam};
 
 use crate::JakaRobot;
 
@@ -52,6 +51,7 @@ impl ArmForwardKinematics<6> for JakaZu3 {
         DhParam::DH { theta: 0., d: 0.105, r: 0., alpha: 0. },
     ];
 }
+roplat_kinematics::dh_kinematics!(JakaZu3, 6);
 
 impl RobotDescription for JakaZu5 {
     const URDF: Option<&'static str> = Some("jaka/jaka_zu5.urdf");
@@ -83,6 +83,7 @@ impl ArmForwardKinematics<6> for JakaZu5 {
         DhParam::DH { theta: 0., d: 0.107, r: 0., alpha: 0. },
     ];
 }
+roplat_kinematics::dh_kinematics!(JakaZu5, 6);
 
 impl RobotDescription for JakaZu7 {
     const URDF: Option<&'static str> = Some("jaka/jaka_zu7.urdf");
@@ -114,6 +115,7 @@ impl ArmForwardKinematics<6> for JakaZu7 {
         DhParam::DH { theta: 0., d: 0.107, r: 0., alpha: 0. },
     ];
 }
+roplat_kinematics::dh_kinematics!(JakaZu7, 6);
 
 impl RobotDescription for JakaZu12 {
     const URDF: Option<&'static str> = Some("jaka/jaka_zu12.urdf");
@@ -145,6 +147,7 @@ impl ArmForwardKinematics<6> for JakaZu12 {
         DhParam::DH { theta: 0., d: 0.1035, r: 0., alpha: 0. },
     ];
 }
+roplat_kinematics::dh_kinematics!(JakaZu12, 6);
 
 impl RobotDescription for JakaZu18 {
     const URDF: Option<&'static str> = Some("jaka/jaka_zu18.urdf");
@@ -176,6 +179,7 @@ impl ArmForwardKinematics<6> for JakaZu18 {
         DhParam::DH { theta: 0., d: 0.1035, r: 0., alpha: 0. },
     ];
 }
+roplat_kinematics::dh_kinematics!(JakaZu18, 6);
 
 impl RobotDescription for JakaZu20 {
     const URDF: Option<&'static str> = Some("jaka/jaka_zu20.urdf");
@@ -207,6 +211,7 @@ impl ArmForwardKinematics<6> for JakaZu20 {
         DhParam::DH { theta: 0., d: 0.1205, r: 0., alpha: 0. },
     ];
 }
+roplat_kinematics::dh_kinematics!(JakaZu20, 6);
 
 impl RobotDescription for JakaZu30 {
     const URDF: Option<&'static str> = Some("jaka/jaka_zu30.urdf");
@@ -238,3 +243,4 @@ impl ArmForwardKinematics<6> for JakaZu30 {
         DhParam::DH { theta: 0., d: 0.1205, r: 0., alpha: 0. },
     ];
 }
+roplat_kinematics::dh_kinematics!(JakaZu30, 6);
