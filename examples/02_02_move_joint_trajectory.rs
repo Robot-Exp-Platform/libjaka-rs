@@ -1,7 +1,7 @@
 use std::f64::consts::PI;
 
 use libjaka::JakaMini2;
-use robot_behavior::{RobotResult, behavior::*};
+use roplat_behavior::{RobotResult, behavior::*};
 
 fn main() -> RobotResult<()> {
     let mut robot = JakaMini2::new("10.5.5.100");

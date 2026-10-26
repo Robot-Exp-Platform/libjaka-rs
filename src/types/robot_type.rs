@@ -1,6 +1,6 @@
-﻿use std::marker::ConstParamTy;
+use std::marker::ConstParamTy;
 
-use robot_behavior::{
+use roplat_behavior::{
     ArmState, JointSample, Pose, RobotException, RobotResult, SpatialSample, StateView,
 };
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
@@ -339,22 +339,11 @@ impl<const N: usize> From<GetDataState> for ArmState<N> {
         let cartesian_tran = cartesian_tran.map(|f| f / 1000.0);
         let cartesian_rot: [f64; 3] = value.actual_position[3..6].try_into().unwrap();
         let cartesian_rot = cartesian_rot.map(|f| f.to_radians());
-        let pose_o_to_ee = Pose::Euler(cartesian_tran, cartesian_rot);
+        let pose_o_to_ee = Pose::from_euler(cartesian_tran, cartesian_rot);
 
         ArmState {
-            joint: StateView::from_meas(JointSample {
-                q: Some(joint),
-                dq: None,
-                ddq: None,
-                tau: None,
-                dtau: None,
-            }),
-            flange: StateView::from_meas(SpatialSample {
-                pose: Some(pose_o_to_ee),
-                vel: None,
-                acc: None,
-                wrench: None,
-            }),
+            joint: StateView::from_meas(JointSample::EMPTY.with_q(joint)),
+            flange: StateView::from_meas(SpatialSample::EMPTY.with_pose(pose_o_to_ee)),
             load: None,
             ..Default::default()
         }
@@ -900,7 +889,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::{CommandSerde, PowerOnResponse, ServoMoveRequest};
-    use robot_behavior::RobotException;
+    use roplat_behavior::RobotException;
 
     fn assert_deserialize_error<T>(result: Result<T, RobotException>) {
         assert!(matches!(result, Err(RobotException::DeserializeError(_))));

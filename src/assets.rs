@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 
 use flate2::read::GzDecoder;
 use reqwest::blocking::Client;
-use robot_behavior::{RobotException, RobotResult};
+use roplat_behavior::{RobotException, RobotResult};
 
 /// Replace this URL with your real GitHub Release artifact after publishing.
 pub const JAKA_ASSETS_RELEASE_URL: &str =
