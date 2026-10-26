@@ -1,5 +1,3 @@
-#![allow(incomplete_features)]
-#![feature(generic_const_exprs)]
 
 use libjaka::JakaMini2;
 use roplat_behavior::{RobotResult, behavior::*};
