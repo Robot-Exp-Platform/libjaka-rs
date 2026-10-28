@@ -20,9 +20,9 @@ impl RobotDescription for JakaA5 {
 impl Joints<6> for JakaA5 {
     const JOINT_DEFAULT: [f64; 6] = [0., 0., 0., 0., 0., 0.];
     const JOINT_PACKED: [f64; 6] = to_radians_array([-90., 0., 152., 120., 0., 0.]);
-    const JOINT_MIN: [f64; 6] = [-PI * 2.; 6];
-    const JOINT_MAX: [f64; 6] = [PI * 2.; 6];
-    const JOINT_VEL_BOUND: [f64; 6] = to_radians_array([210., 210., 210., 265., 265., 265.]);
+    const JOINT_MIN: [f64; 6] = to_radians_array([-360., -85., -175., -85., -360., -360.]);
+    const JOINT_MAX: [f64; 6] = to_radians_array([360., 265., 175., 265., 360., 360.]);
+    const JOINT_VEL_BOUND: [f64; 6] = to_radians_array([210.; 6]);
     const JOINT_ACC_BOUND: [f64; 6] = [PI * 4.; 6];
 }
 
@@ -36,11 +36,11 @@ impl EndPoint for JakaA5 {
 impl ArmForwardKinematics<6> for JakaA5 {
     const DH: [DhParam; 6] = [
         DhParam::DH { theta: 0., d: 0.12015, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0., r: 0.430, alpha: 0. },
+        DhParam::DH { theta: 0., d: 0., r: 0.43, alpha: 0. },
         DhParam::DH { theta: 0., d: 0., r: 0.3685, alpha: 0. },
-        DhParam::DH { theta: 0., d: 0.114, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0.1135, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0.107, r: 0., alpha: 0. },
+        DhParam::DH { theta: 0., d: -0.115, r: 0., alpha: FRAC_PI_2 },
+        DhParam::DH { theta: PI, d: 0.1135, r: 0., alpha: FRAC_PI_2 },
+        DhParam::DH { theta: PI, d: 0.107, r: 0., alpha: 0. },
     ];
 }
 roplat_kinematics::dh_kinematics!(JakaA5, 6);
@@ -54,7 +54,7 @@ impl Joints<6> for JakaA12 {
     const JOINT_PACKED: [f64; 6] = to_radians_array([0., 90., 180., -180., 180., 90.]);
     const JOINT_MIN: [f64; 6] = [-PI * 2.; 6];
     const JOINT_MAX: [f64; 6] = [PI * 2.; 6];
-    const JOINT_VEL_BOUND: [f64; 6] = to_radians_array([150., 150., 210., 210., 265., 265.]);
+    const JOINT_VEL_BOUND: [f64; 6] = to_radians_array([150., 150., 210., 210., 210., 210.]);
     const JOINT_ACC_BOUND: [f64; 6] = [PI * 4.; 6];
 }
 
@@ -68,10 +68,10 @@ impl EndPoint for JakaA12 {
 impl ArmForwardKinematics<6> for JakaA12 {
     const DH: [DhParam; 6] = [
         DhParam::DH { theta: 0., d: 0.14265, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0., r: 0.770, alpha: 0. },
-        DhParam::DH { theta: 0., d: 0.03750, r: 0., alpha: -FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0.5515, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0.115, r: 0., alpha: -FRAC_PI_2 },
+        DhParam::DH { theta: 0., d: 0., r: 0.77, alpha: 0. },
+        DhParam::DH { theta: FRAC_PI_2, d: 0.0375, r: 0., alpha: FRAC_PI_2 },
+        DhParam::DH { theta: 0., d: 0.5515, r: 0., alpha: -FRAC_PI_2 },
+        DhParam::DH { theta: -FRAC_PI_2, d: 0.115, r: 0., alpha: FRAC_PI_2 },
         DhParam::DH { theta: 0., d: 0.1035, r: 0., alpha: 0. },
     ];
 }
