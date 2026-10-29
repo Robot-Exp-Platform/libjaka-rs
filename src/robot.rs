@@ -2,8 +2,8 @@ use crate::{JAKA_FREQUENCY, JAKA_VERSION, network::NetWork, robot_impl::RobotImp
 
 use roplat_behavior::{
     Arm, ArmState, CartesianPoseControl, ControlObservation, ControlObserver, ControlStep,
-    ControlWith, Coord, EndPoint, FlangeSpace, JointPositionControl, JointSpace, JointState,
-    Joints, LoadState, MoveTo, MoveTraj, OverrideOnce, Pose, Robot, RobotException, RobotResult,
+    ControlWith, EndPoint, FlangeSpace, JointPositionControl, JointSpace, JointState, Joints,
+    LoadState, MotionLimits, MoveTo, MoveTraj, Pose, Robot, RobotException, RobotResult,
 };
 use rsruckig::{
     error::ThrowErrorHandler,
@@ -56,13 +56,8 @@ pub struct JakaRobot<T, const N: usize> {
     #[allow(dead_code)]
     pub(crate) streaming_handle: thread::JoinHandle<()>,
     pub(crate) is_moving: bool,
-    pub(crate) coord: OverrideOnce<Coord>,
-    pub(crate) max_vel: OverrideOnce<[f64; N]>,
-    pub(crate) max_acc: OverrideOnce<[f64; N]>,
-    pub(crate) max_cartesian_vel: OverrideOnce<f64>,
-    pub(crate) max_cartesian_acc: OverrideOnce<f64>,
-    pub(crate) max_rotation_vel: OverrideOnce<f64>,
-    pub(crate) max_rotation_acc: OverrideOnce<f64>,
+    /// 运动指令使用的限制；`scale` 缩放速度和加速度。
+    pub(crate) limits: MotionLimits<N>,
 }
 
 impl<T, const N: usize> JakaRobot<T, N>
@@ -114,6 +109,23 @@ where
         };
         Ok(tio)
     }
+
+    /// 控制器报告的法兰位姿；读取失败时为单位位姿。
+    pub(crate) fn flange_pose(&self) -> Pose {
+        let mut robot_impl = self.robot_impl.clone();
+        robot_impl
+            ._get_data()
+            .map(|data| Into::<ArmState<N>>::into(data).flange.meas.pose().unwrap())
+            .unwrap_or_default()
+    }
+
+    /// 向控制器读取法兰位姿，读取失败时返回错误。相对运动以它为起点。
+    pub(crate) fn read_flange_pose(&mut self) -> RobotResult<Pose> {
+        let state: ArmState<N> = self.robot_impl._get_data()?.into();
+        state.flange.meas.pose().ok_or_else(|| {
+            RobotException::CommandException("JAKA reported no flange pose".to_string())
+        })
+    }
 }
 
 impl<T, const N: usize> JakaRobot<T, N>
@@ -123,11 +135,11 @@ where
 {
     /// 连接指定 IP 的 JAKA 控制器并创建机器人对象。
     ///
-    /// 构造函数会初始化默认坐标系、速度/加速度限制，并使用较保守的
-    /// `0.05` 缩放作为默认运动倍率。
+    /// 运动限制取该型号声明的范围，并使用较保守的 `0.05` 作为默认
+    /// 运动倍率；用 [`Arm::set_motion_limits`] 修改。
     pub fn new(ip: &str) -> Self {
         let robot_state = NetWork::state_connect(ip);
-        let mut robot = Self {
+        Self {
             marker: PhantomData,
             robot_impl: RobotImpl::new(ip),
             robot_state,
@@ -135,31 +147,8 @@ where
             after_observers: control_observers(),
             streaming_handle: thread::spawn(|| {}),
             is_moving: false,
-            coord: OverrideOnce::new(Coord::OCS),
-            max_vel: OverrideOnce::new(Self::JOINT_VEL_BOUND),
-            max_acc: OverrideOnce::new(Self::JOINT_ACC_BOUND),
-            max_cartesian_vel: OverrideOnce::new(Self::CARTESIAN_VEL_BOUND),
-            max_cartesian_acc: OverrideOnce::new(Self::CARTESIAN_ACC_BOUND),
-            max_rotation_vel: OverrideOnce::new(Self::ROTATION_VEL_BOUND),
-            max_rotation_acc: OverrideOnce::new(Self::ROTATION_ACC_BOUND),
-        };
-        let _ = robot.set_scale(0.05);
-        robot
-    }
-
-    /// 设置下一次运动命令使用的坐标系。
-    pub fn set_coord(&mut self, coord: Coord) {
-        self.coord.set(coord);
-    }
-
-    /// 按比例缩放关节和笛卡尔空间的速度、加速度限制。
-    pub fn set_scale(&mut self, scale: f64) {
-        self.max_vel.set(Self::JOINT_VEL_BOUND.map(|v| v * scale));
-        self.max_acc.set(Self::JOINT_ACC_BOUND.map(|v| v * scale));
-        self.max_cartesian_vel
-            .set(Self::CARTESIAN_VEL_BOUND * scale);
-        self.max_cartesian_acc
-            .set(Self::CARTESIAN_ACC_BOUND * scale);
+            limits: MotionLimits::envelope::<Self>().scaled(0.05),
+        }
     }
 }
 
@@ -168,7 +157,7 @@ where
     [f64; N]: Serialize + for<'a> Deserialize<'a>,
 {
     type State = RobotState;
-    const CONTROL_PERIOD: f64 = 1. / JAKA_FREQUENCY;
+    const CONTROL_PERIOD: Duration = Duration::from_nanos((1e9 / JAKA_FREQUENCY) as u64);
 
     fn version() -> String {
         format!("JAKA Robot v{JAKA_VERSION}")
@@ -261,53 +250,14 @@ where
             .map(|data| Into::<ArmState<N>>::into(data).joint.meas.q().unwrap())
             .unwrap_or([0.; N])
     }
-    fn get_endpoint(&self) -> Pose {
-        let mut robot_impl = self.robot_impl.clone();
-        robot_impl
-            ._get_data()
-            .map(|data| Into::<ArmState<N>>::into(data).flange.meas.pose().unwrap())
-            .unwrap_or_default()
-    }
 
-    fn with_joint_vel(mut self, vel_bound: [f64; N]) -> Self {
-        self.max_vel.once(vel_bound);
-        self
+    fn motion_limits(&self) -> MotionLimits<N> {
+        self.limits
     }
-    fn with_joint_acc(mut self, acc_bound: [f64; N]) -> Self {
-        self.max_acc.once(acc_bound);
-        self
-    }
-    fn with_joint_jerk(self, _jerk_bound: [f64; N]) -> Self {
-        self
-    }
-    fn with_torque(self, _torque_bound: [f64; N]) -> Self {
-        self
-    }
-    fn with_torque_dot(self, _torque_dot_bound: [f64; N]) -> Self {
-        self
-    }
-
-    fn with_cartesian_vel(mut self, vel_bound: f64) -> Self {
-        self.max_cartesian_vel.once(vel_bound);
-        self
-    }
-    fn with_cartesian_acc(mut self, acc_bound: f64) -> Self {
-        self.max_cartesian_acc.once(acc_bound);
-        self
-    }
-    fn with_cartesian_jerk(self, _jerk_bound: f64) -> Self {
-        self
-    }
-    fn with_rotation_vel(mut self, vel_bound: f64) -> Self {
-        self.max_rotation_vel.once(vel_bound);
-        self
-    }
-    fn with_rotation_acc(mut self, acc_bound: f64) -> Self {
-        self.max_rotation_acc.once(acc_bound);
-        self
-    }
-    fn with_rotation_jerk(self, _jerk_bound: f64) -> Self {
-        self
+    fn set_motion_limits(&mut self, limits: MotionLimits<N>) -> RobotResult<()> {
+        limits.within(&MotionLimits::envelope::<Self>())?;
+        self.limits = limits;
+        Ok(())
     }
 }
 
@@ -322,12 +272,14 @@ where
                 "Robot is moving".to_string(),
             ));
         }
-        let coord = self.coord.get();
+        // JAKA 的关节运动只取一个速度和加速度，用各关节限制中最紧的一个。
+        let limits = self.limits.scaled_joint();
+        let tightest = |bounds: [f64; N]| bounds.into_iter().fold(f64::INFINITY, f64::min);
         let move_data = JointMoveData::<N> {
             joint_position: target.map(f64::to_degrees),
-            speed: self.max_vel.get()[0].to_degrees(),
-            accel: self.max_acc.get()[0].to_degrees(),
-            relflag: u8::from(coord != Coord::OCS),
+            speed: tightest(limits.dq_max).to_degrees(),
+            accel: tightest(limits.ddq_max).to_degrees(),
+            relflag: 0,
         };
         self.run_blocking_move(|robot| robot._joint_move(move_data))
     }
@@ -343,12 +295,12 @@ where
                 "Robot is moving".to_string(),
             ));
         }
-        let coord = self.coord.get();
+        let limits = self.limits.scaled_cartesian();
         let move_data = MoveLData {
             cart_position: pose_to_jaka_cart(target),
-            speed: self.max_cartesian_vel.get() * 1000.0, // m/s -> mm/s
-            accel: self.max_cartesian_acc.get() * 1000.0,
-            relflag: u8::from(coord != Coord::OCS),
+            speed: limits.linear_velocity * 1000.0, // m/s -> mm/s
+            accel: limits.linear_acceleration * 1000.0,
+            relflag: 0,
         };
         self.run_blocking_move(|robot| robot._move_l(move_data))
     }
@@ -397,12 +349,16 @@ where
             return Ok(());
         };
 
-        let mut ruckig = Ruckig::<N, ThrowErrorHandler>::new(None, 1. / JAKA_FREQUENCY);
+        let mut ruckig =
+            Ruckig::<N, ThrowErrorHandler>::new(None, Self::CONTROL_PERIOD.as_secs_f64());
         let mut input = InputParameter::new(None);
         let mut output = OutputParameter::new(None);
 
-        input.max_velocity = DataArrayOrVec::Stack(<Self as Joints<N>>::JOINT_VEL_BOUND);
-        input.max_acceleration = DataArrayOrVec::Stack(<Self as Joints<N>>::JOINT_ACC_BOUND);
+        // Ruckig 把无穷大的加加速度限制视为不约束。
+        let limits = self.limits.scaled_joint();
+        input.max_velocity = DataArrayOrVec::Stack(limits.dq_max);
+        input.max_acceleration = DataArrayOrVec::Stack(limits.ddq_max);
+        input.max_jerk = DataArrayOrVec::Stack(limits.dddq_max);
         input.current_position = DataArrayOrVec::Stack(first);
 
         let mut dense: Vec<[f64; N]> = Vec::new();
@@ -457,7 +413,7 @@ where
         let robot_state = self.robot_state.clone();
         let before_observers = self.before_observers.clone();
         let after_observers = self.after_observers.clone();
-        let period = Duration::from_secs_f64(1. / JAKA_FREQUENCY);
+        let period = Self::CONTROL_PERIOD;
 
         let result = (|| -> RobotResult<()> {
             let enter: RobotResult<()> = robot._servo_move(ServoMoveData { relflag: 1 })?.into();
@@ -542,7 +498,7 @@ where
         let robot_state = self.robot_state.clone();
         let before_observers = self.before_observers.clone();
         let after_observers = self.after_observers.clone();
-        let period = Duration::from_secs_f64(1. / JAKA_FREQUENCY);
+        let period = Self::CONTROL_PERIOD;
 
         let result = (|| -> RobotResult<()> {
             let enter: RobotResult<()> = robot._servo_move(ServoMoveData { relflag: 1 })?.into();
