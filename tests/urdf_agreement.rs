@@ -76,9 +76,10 @@ fn zu_series() {
     check::<JakaZu3>("jaka_zu3.urdf", "Link_0", "Link_6");
     check::<JakaZu5>("jaka_zu5.urdf", "Link_0", "Link_6");
     check::<JakaZu7>("jaka_zu7.urdf", "Link_0", "Link_6");
-    // jaka_zu12.urdf puts joint 1 at 0.10265 m above `Link_0` and lifts
-    // `Link_0` 0.04 m above `world`; its base mesh is the one Zu18, S12 and
-    // Pro12 carry with joint 1 at 0.14265 m, so `world` is the mounting face.
+    // jaka_zu12.urdf puts joint 1 0.10265 m above `Link_0` and `Link_0` 0.04 m
+    // above `world`. Its 4 cm base plate hangs below `Link_0`, so `world` is
+    // the mounting face and joint 1 stands 0.14265 m above it, as in Zu18, S12
+    // and Pro12, whose plates sit on `Link_0`.
     check::<JakaZu12>("jaka_zu12.urdf", "world", "Link_6");
     check::<JakaZu18>("jaka_zu18.urdf", "Link_0", "Link_6");
     check::<JakaZu20>("jaka_zu20.urdf", "base_link", "Link_06");

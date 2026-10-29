@@ -3,7 +3,7 @@ use std::f64::consts::{FRAC_PI_2, PI};
 use roplat_behavior::{EndPoint, Joints, RobotDescription, to_radians_array};
 use roplat_kinematics::{ArmForwardKinematics, DhParam};
 
-use crate::JakaRobot;
+use crate::{JakaRobot, JakaZu20};
 
 pub struct _JakaA5;
 pub struct _JakaA12;
@@ -97,14 +97,10 @@ impl EndPoint for JakaA20 {
     const ROTATION_ACC_BOUND: f64 = PI * 4.;
 }
 
+/// No A20 URDF ships with the crate. A20's table was Zu20's, row for row,
+/// before Zu20's was derived from its URDF; by the author's ruling A20 takes
+/// Zu20's corrected table.
 impl ArmForwardKinematics<6> for JakaA20 {
-    const DH: [DhParam; 6] = [
-        DhParam::DH { theta: 0., d: 0.1965, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0., r: 0.897, alpha: 0. },
-        DhParam::DH { theta: 0., d: 0., r: 0.7445, alpha: 0. },
-        DhParam::DH { theta: 0., d: 0.18835, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0.1385, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0.1205, r: 0., alpha: 0. },
-    ];
+    const DH: [DhParam; 6] = <JakaZu20 as ArmForwardKinematics<6>>::DH;
 }
 roplat_kinematics::dh_kinematics!(JakaA20, 6);
