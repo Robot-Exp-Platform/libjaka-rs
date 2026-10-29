@@ -1,6 +1,8 @@
 use std::f64::consts::{FRAC_PI_2, PI};
 
-use roplat_behavior::{EndPoint, Joints, RobotDescription, to_radians_array};
+use roplat_behavior::{
+    EndPoint, EndPointPose, Joints, Pose, RobotDescription, RobotResult, to_radians_array,
+};
 use roplat_kinematics::{ArmForwardKinematics, DhParam};
 
 use crate::JakaRobot;
@@ -31,6 +33,15 @@ impl EndPoint for JakaS5 {
     const CARTESIAN_ACC_BOUND: f64 = 8.0;
     const ROTATION_VEL_BOUND: f64 = PI;
     const ROTATION_ACC_BOUND: f64 = PI * 4.;
+}
+
+impl EndPointPose for JakaS5 {
+    fn get_endpoint(&self) -> Pose {
+        self.flange_pose()
+    }
+    fn read_endpoint(&mut self) -> RobotResult<Pose> {
+        self.read_flange_pose()
+    }
 }
 
 impl ArmForwardKinematics<6> for JakaS5 {
@@ -65,6 +76,15 @@ impl EndPoint for JakaS7 {
     const ROTATION_ACC_BOUND: f64 = PI * 4.;
 }
 
+impl EndPointPose for JakaS7 {
+    fn get_endpoint(&self) -> Pose {
+        self.flange_pose()
+    }
+    fn read_endpoint(&mut self) -> RobotResult<Pose> {
+        self.read_flange_pose()
+    }
+}
+
 impl ArmForwardKinematics<6> for JakaS7 {
     const DH: [DhParam; 6] = [
         DhParam::DH { theta: 0., d: 0.12015, r: 0., alpha: FRAC_PI_2 },
@@ -95,6 +115,15 @@ impl EndPoint for JakaS12 {
     const CARTESIAN_ACC_BOUND: f64 = 8.0;
     const ROTATION_VEL_BOUND: f64 = PI;
     const ROTATION_ACC_BOUND: f64 = PI * 4.;
+}
+
+impl EndPointPose for JakaS12 {
+    fn get_endpoint(&self) -> Pose {
+        self.flange_pose()
+    }
+    fn read_endpoint(&mut self) -> RobotResult<Pose> {
+        self.read_flange_pose()
+    }
 }
 
 impl ArmForwardKinematics<6> for JakaS12 {

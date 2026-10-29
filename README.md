@@ -87,6 +87,6 @@ This version implements joint-position and Cartesian-pose control, but no native
 
 ## Source builds, assets, and license
 
-Checkout manifests use the same crates.io dependencies as the published crate; neither route needs a sibling workspace. Model assets are excluded from the published crate; see [the asset module](src/assets.rs) for explicit retrieval. `ROPLAT_SKIP_ASSET_EXPORT=1` skips optional build-time asset export during checks and CI.
+Checkout manifests use the same crates.io dependencies as the published crate; neither route needs a sibling workspace. Model assets are in neither the repository nor the published crate, and the build writes nothing outside its output directory. Simulators and viewers that need the URDFs call `libjaka::assets::download_jaka_assets()` once; it installs the release archive into the shared asset directory, `roplat_world::assets_dir()`. Driving a real controller needs none of them.
 
 The Rust driver is maintained by Robot-Exp-Platform under [Apache-2.0](LICENSE). JAKA is the manufacturer's name; this project is unofficial. Separately obtained model assets and vendor software retain their attribution and terms.

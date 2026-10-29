@@ -1,5 +1,5 @@
 use pyo3::{pyclass, pymethods};
-use roplat_behavior::{
+use roplat_behavior_ffi::{
     py_arm, py_flange_move, py_joint_motion, py_joint_position_control, py_robot,
 };
 

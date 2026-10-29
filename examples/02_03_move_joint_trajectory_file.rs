@@ -9,7 +9,7 @@ fn main() -> RobotResult<()> {
     );
 
     robot.enable()?;
-    robot.set_scale(0.05);
+    robot.set_motion_limits(robot.motion_limits().scaled(0.05))?;
     robot.move_to::<JointSpace<6>>(JakaMini2::JOINT_DEFAULT)?;
     robot.move_traj_from_file::<JointSpace<6>>(path)
 }

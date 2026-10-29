@@ -101,13 +101,11 @@ fn fixture(
         after_observers: control_observers(),
         streaming_handle: thread::spawn(|| {}),
         is_moving: false,
-        coord: OverrideOnce::new(Coord::OCS),
-        max_vel: OverrideOnce::new([1.; 6]),
-        max_acc: OverrideOnce::new([1.; 6]),
-        max_cartesian_vel: OverrideOnce::new(1.),
-        max_cartesian_acc: OverrideOnce::new(1.),
-        max_rotation_vel: OverrideOnce::new(1.),
-        max_rotation_acc: OverrideOnce::new(1.),
+        limits: MotionLimits {
+            joint: roplat_behavior::JointLimits::UNBOUNDED,
+            cartesian: roplat_behavior::CartesianLimits::UNBOUNDED,
+            scale: 1.,
+        },
     };
     (robot, server)
 }
