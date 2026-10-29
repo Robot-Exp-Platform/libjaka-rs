@@ -1,6 +1,8 @@
 use std::f64::consts::{FRAC_PI_2, PI};
 
-use roplat_behavior::{EndPoint, Joints, Pose, RobotDescription, RobotResult, to_radians_array};
+use roplat_behavior::{
+    EndPoint, EndPointPose, Joints, Pose, RobotDescription, RobotResult, to_radians_array,
+};
 use roplat_kinematics::{ArmForwardKinematics, DhParam};
 
 use crate::JakaRobot;
@@ -39,6 +41,9 @@ impl EndPoint for JakaZu3 {
     const CARTESIAN_ACC_BOUND: f64 = 8.0;
     const ROTATION_VEL_BOUND: f64 = PI;
     const ROTATION_ACC_BOUND: f64 = PI * 4.;
+}
+
+impl EndPointPose for JakaZu3 {
     fn get_endpoint(&self) -> Pose {
         self.flange_pose()
     }
@@ -77,6 +82,9 @@ impl EndPoint for JakaZu5 {
     const CARTESIAN_ACC_BOUND: f64 = 8.0;
     const ROTATION_VEL_BOUND: f64 = PI;
     const ROTATION_ACC_BOUND: f64 = PI * 4.;
+}
+
+impl EndPointPose for JakaZu5 {
     fn get_endpoint(&self) -> Pose {
         self.flange_pose()
     }
@@ -115,6 +123,9 @@ impl EndPoint for JakaZu7 {
     const CARTESIAN_ACC_BOUND: f64 = 8.0;
     const ROTATION_VEL_BOUND: f64 = PI;
     const ROTATION_ACC_BOUND: f64 = PI * 4.;
+}
+
+impl EndPointPose for JakaZu7 {
     fn get_endpoint(&self) -> Pose {
         self.flange_pose()
     }
@@ -153,6 +164,9 @@ impl EndPoint for JakaZu12 {
     const CARTESIAN_ACC_BOUND: f64 = 8.0;
     const ROTATION_VEL_BOUND: f64 = PI;
     const ROTATION_ACC_BOUND: f64 = PI * 4.;
+}
+
+impl EndPointPose for JakaZu12 {
     fn get_endpoint(&self) -> Pose {
         self.flange_pose()
     }
@@ -191,6 +205,9 @@ impl EndPoint for JakaZu18 {
     const CARTESIAN_ACC_BOUND: f64 = 8.0;
     const ROTATION_VEL_BOUND: f64 = PI;
     const ROTATION_ACC_BOUND: f64 = PI * 4.;
+}
+
+impl EndPointPose for JakaZu18 {
     fn get_endpoint(&self) -> Pose {
         self.flange_pose()
     }
@@ -229,6 +246,9 @@ impl EndPoint for JakaZu20 {
     const CARTESIAN_ACC_BOUND: f64 = 8.0;
     const ROTATION_VEL_BOUND: f64 = PI;
     const ROTATION_ACC_BOUND: f64 = PI * 4.;
+}
+
+impl EndPointPose for JakaZu20 {
     fn get_endpoint(&self) -> Pose {
         self.flange_pose()
     }
@@ -267,6 +287,9 @@ impl EndPoint for JakaZu30 {
     const CARTESIAN_ACC_BOUND: f64 = 8.0;
     const ROTATION_VEL_BOUND: f64 = PI;
     const ROTATION_ACC_BOUND: f64 = PI * 4.;
+}
+
+impl EndPointPose for JakaZu30 {
     fn get_endpoint(&self) -> Pose {
         self.flange_pose()
     }

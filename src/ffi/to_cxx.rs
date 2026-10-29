@@ -1,5 +1,5 @@
 use roplat_behavior::{
-    Arm, EndPoint, FlangeSpace, JointSpace, LoadState, MoveTo, Pose, Robot, RobotResult,
+    Arm, EndPointPose, FlangeSpace, JointSpace, LoadState, MoveTo, Pose, Robot, RobotResult,
 };
 
 struct JakaMini2(crate::JakaMini2);
@@ -110,7 +110,7 @@ impl JakaMini2 {
     }
 
     fn get_endpoint(&self) -> CxxPoseData {
-        pose_to_cxx(<crate::JakaMini2 as EndPoint>::get_endpoint(&self.0))
+        pose_to_cxx(<crate::JakaMini2 as EndPointPose>::get_endpoint(&self.0))
     }
 
     fn move_joint(&mut self, target: [f64; 6]) -> RobotResult<()> {

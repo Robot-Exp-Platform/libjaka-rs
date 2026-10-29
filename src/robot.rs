@@ -2,8 +2,8 @@ use crate::{JAKA_FREQUENCY, JAKA_VERSION, network::NetWork, robot_impl::RobotImp
 
 use roplat_behavior::{
     Arm, ArmState, CartesianPoseControl, ControlObservation, ControlObserver, ControlStep,
-    ControlWith, EndPoint, FlangeSpace, JointPositionControl, JointSpace, JointState, Joints,
-    LoadState, MotionLimits, MoveTo, MoveTraj, Pose, Robot, RobotException, RobotResult,
+    ControlWith, EndPoint, EndPointPose, FlangeSpace, JointPositionControl, JointSpace, JointState,
+    Joints, LoadState, MotionLimits, MoveTo, MoveTraj, Pose, Robot, RobotException, RobotResult,
 };
 use rsruckig::{
     error::ThrowErrorHandler,
@@ -232,7 +232,7 @@ where
 impl<T, const N: usize> Arm<N> for JakaRobot<T, N>
 where
     [f64; N]: Serialize + for<'a> Deserialize<'a>,
-    Self: Joints<N> + EndPoint,
+    Self: Joints<N> + EndPoint + EndPointPose,
 {
     fn state(&mut self) -> RobotResult<ArmState<N>> {
         let data = self.robot_impl._get_data()?;
