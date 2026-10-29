@@ -36,10 +36,10 @@ impl EndPoint for JakaS5 {
 impl ArmForwardKinematics<6> for JakaS5 {
     const DH: [DhParam; 6] = [
         DhParam::DH { theta: 0., d: 0.12015, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0., r: 0.430, alpha: 0. },
+        DhParam::DH { theta: 0., d: 0., r: 0.43, alpha: 0. },
         DhParam::DH { theta: 0., d: 0., r: 0.3685, alpha: 0. },
-        DhParam::DH { theta: 0., d: 0.114, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0.1135, r: 0., alpha: FRAC_PI_2 },
+        DhParam::DH { theta: 0., d: -0.114, r: 0., alpha: FRAC_PI_2 },
+        DhParam::DH { theta: 0., d: 0.11376, r: 0.00026, alpha: -FRAC_PI_2 },
         DhParam::DH { theta: 0., d: 0.1175, r: 0., alpha: 0. },
     ];
 }
@@ -68,10 +68,10 @@ impl EndPoint for JakaS7 {
 impl ArmForwardKinematics<6> for JakaS7 {
     const DH: [DhParam; 6] = [
         DhParam::DH { theta: 0., d: 0.12015, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0., r: 0.360, alpha: 0. },
+        DhParam::DH { theta: 0., d: 0., r: 0.36, alpha: 0. },
         DhParam::DH { theta: 0., d: 0., r: 0.3035, alpha: 0. },
-        DhParam::DH { theta: 0., d: 0.11501, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0.1135, r: 0., alpha: FRAC_PI_2 },
+        DhParam::DH { theta: 0., d: -0.11501, r: 0., alpha: FRAC_PI_2 },
+        DhParam::DH { theta: PI, d: 0.1135, r: 0., alpha: FRAC_PI_2 },
         DhParam::DH { theta: 0., d: 0.1175, r: 0., alpha: 0. },
     ];
 }
@@ -102,8 +102,8 @@ impl ArmForwardKinematics<6> for JakaS12 {
         DhParam::DH { theta: 0., d: 0.14265, r: 0., alpha: FRAC_PI_2 },
         DhParam::DH { theta: 0., d: 0., r: 0.595, alpha: 0. },
         DhParam::DH { theta: 0., d: 0., r: 0.5715, alpha: 0. },
-        DhParam::DH { theta: 0., d: 0.1315, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0.115, r: 0., alpha: FRAC_PI_2 },
+        DhParam::DH { theta: 0., d: -0.1315, r: 0., alpha: FRAC_PI_2 },
+        DhParam::DH { theta: 0., d: 0.11526, r: 0.00026, alpha: -FRAC_PI_2 },
         DhParam::DH { theta: 0., d: 0.112, r: 0., alpha: 0. },
     ];
 }

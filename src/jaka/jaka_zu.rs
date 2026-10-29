@@ -44,11 +44,11 @@ impl EndPoint for JakaZu3 {
 impl ArmForwardKinematics<6> for JakaZu3 {
     const DH: [DhParam; 6] = [
         DhParam::DH { theta: 0., d: 0.15055, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0., r: 0.246, alpha: 0. },
+        DhParam::DH { theta: 0., d: 0., r: 0.248, alpha: 0. },
         DhParam::DH { theta: 0., d: 0., r: 0.228, alpha: 0. },
-        DhParam::DH { theta: 0., d: 0.113, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0.1175, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0.105, r: 0., alpha: 0. },
+        DhParam::DH { theta: 0., d: -0.115, r: 0., alpha: FRAC_PI_2 },
+        DhParam::DH { theta: PI, d: 0.1175, r: 0., alpha: FRAC_PI_2 },
+        DhParam::DH { theta: PI, d: 0.1065, r: 0., alpha: 0. },
     ];
 }
 roplat_kinematics::dh_kinematics!(JakaZu3, 6);
@@ -76,11 +76,11 @@ impl EndPoint for JakaZu5 {
 impl ArmForwardKinematics<6> for JakaZu5 {
     const DH: [DhParam; 6] = [
         DhParam::DH { theta: 0., d: 0.12015, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0., r: 0.430, alpha: 0. },
+        DhParam::DH { theta: 0., d: 0., r: 0.43, alpha: 0. },
         DhParam::DH { theta: 0., d: 0., r: 0.3685, alpha: 0. },
-        DhParam::DH { theta: 0., d: 0.114, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0.1135, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0.107, r: 0., alpha: 0. },
+        DhParam::DH { theta: 0., d: -0.114, r: 0., alpha: FRAC_PI_2 },
+        DhParam::DH { theta: PI, d: 0.1135, r: 0., alpha: FRAC_PI_2 },
+        DhParam::DH { theta: PI, d: 0.107, r: 0., alpha: 0. },
     ];
 }
 roplat_kinematics::dh_kinematics!(JakaZu5, 6);
@@ -108,11 +108,11 @@ impl EndPoint for JakaZu7 {
 impl ArmForwardKinematics<6> for JakaZu7 {
     const DH: [DhParam; 6] = [
         DhParam::DH { theta: 0., d: 0.12015, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0., r: 0.360, alpha: 0. },
-        DhParam::DH { theta: 0., d: 0., r: 0.3035, alpha: 0. },
-        DhParam::DH { theta: 0., d: 0.11501, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0.1135, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0.107, r: 0., alpha: 0. },
+        DhParam::DH { theta: 0., d: 0., r: 0.36, alpha: 0. },
+        DhParam::DH { theta: 0., d: 0., r: 0.30353, alpha: 0. },
+        DhParam::DH { theta: 0., d: -0.11501, r: 0., alpha: FRAC_PI_2 },
+        DhParam::DH { theta: PI, d: 0.1135, r: 0., alpha: FRAC_PI_2 },
+        DhParam::DH { theta: PI, d: 0.107, r: 0., alpha: 0. },
     ];
 }
 roplat_kinematics::dh_kinematics!(JakaZu7, 6);
@@ -142,9 +142,9 @@ impl ArmForwardKinematics<6> for JakaZu12 {
         DhParam::DH { theta: 0., d: 0.14265, r: 0., alpha: FRAC_PI_2 },
         DhParam::DH { theta: 0., d: 0., r: 0.595, alpha: 0. },
         DhParam::DH { theta: 0., d: 0., r: 0.5715, alpha: 0. },
-        DhParam::DH { theta: 0., d: 0.1315, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0.115, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0.1035, r: 0., alpha: 0. },
+        DhParam::DH { theta: 0., d: -0.1315, r: 0., alpha: FRAC_PI_2 },
+        DhParam::DH { theta: PI, d: 0.115, r: 0., alpha: FRAC_PI_2 },
+        DhParam::DH { theta: PI, d: 0.1035, r: 0., alpha: 0. },
     ];
 }
 roplat_kinematics::dh_kinematics!(JakaZu12, 6);
@@ -172,11 +172,11 @@ impl EndPoint for JakaZu18 {
 impl ArmForwardKinematics<6> for JakaZu18 {
     const DH: [DhParam; 6] = [
         DhParam::DH { theta: 0., d: 0.14265, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0., r: 0.510, alpha: 0. },
-        DhParam::DH { theta: 0., d: 0., r: 0.400, alpha: 0. },
-        DhParam::DH { theta: 0., d: 0.154, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0.115, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0.1035, r: 0., alpha: 0. },
+        DhParam::DH { theta: 0., d: 0., r: 0.51, alpha: 0. },
+        DhParam::DH { theta: 0., d: 0., r: 0.4, alpha: 0. },
+        DhParam::DH { theta: 0., d: -0.154, r: 0., alpha: FRAC_PI_2 },
+        DhParam::DH { theta: PI, d: 0.115, r: 0., alpha: FRAC_PI_2 },
+        DhParam::DH { theta: PI, d: 0.1035, r: 0., alpha: 0. },
     ];
 }
 roplat_kinematics::dh_kinematics!(JakaZu18, 6);
@@ -206,9 +206,9 @@ impl ArmForwardKinematics<6> for JakaZu20 {
         DhParam::DH { theta: 0., d: 0.1965, r: 0., alpha: FRAC_PI_2 },
         DhParam::DH { theta: 0., d: 0., r: 0.897, alpha: 0. },
         DhParam::DH { theta: 0., d: 0., r: 0.7445, alpha: 0. },
-        DhParam::DH { theta: 0., d: 0.18835, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0.1385, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0.1205, r: 0., alpha: 0. },
+        DhParam::DH { theta: 0., d: -0.18835, r: 0., alpha: FRAC_PI_2 },
+        DhParam::DH { theta: PI, d: 0.13876, r: 0.00026, alpha: FRAC_PI_2 },
+        DhParam::DH { theta: PI, d: 0.1205, r: 0., alpha: 0. },
     ];
 }
 roplat_kinematics::dh_kinematics!(JakaZu20, 6);
@@ -238,8 +238,8 @@ impl ArmForwardKinematics<6> for JakaZu30 {
         DhParam::DH { theta: 0., d: 0.1965, r: 0., alpha: FRAC_PI_2 },
         DhParam::DH { theta: 0., d: 0., r: 0.6625, alpha: 0. },
         DhParam::DH { theta: 0., d: 0., r: 0.549, alpha: 0. },
-        DhParam::DH { theta: 0., d: 0.18835, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0.1385, r: 0., alpha: FRAC_PI_2 },
+        DhParam::DH { theta: 0., d: -0.18835, r: 0., alpha: FRAC_PI_2 },
+        DhParam::DH { theta: 0., d: 0.1385, r: 0.00039, alpha: -FRAC_PI_2 },
         DhParam::DH { theta: 0., d: 0.1205, r: 0., alpha: 0. },
     ];
 }

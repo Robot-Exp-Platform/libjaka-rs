@@ -18,7 +18,7 @@ impl Joints<6> for JakaMini2 {
     const JOINT_MIN: [f64; 6] = [
         -PI * 2.,
         -FRAC_PI_3 * 2.,
-        -FRAC_PI_3 * 2.,
+        -2.27,
         -PI * 2.,
         -FRAC_PI_3 * 2.,
         -PI * 2.,
@@ -26,12 +26,12 @@ impl Joints<6> for JakaMini2 {
     const JOINT_MAX: [f64; 6] = [
         PI * 2.,
         FRAC_PI_3 * 2.,
-        FRAC_PI_3 * 2.,
+        2.27,
         PI * 2.,
         FRAC_PI_3 * 2.,
         PI * 2.,
     ];
-    const JOINT_VEL_BOUND: [f64; 6] = [PI; 6];
+    const JOINT_VEL_BOUND: [f64; 6] = [FRAC_PI_2; 6];
     const JOINT_ACC_BOUND: [f64; 6] = [PI * 4.; 6];
 }
 
