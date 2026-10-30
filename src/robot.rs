@@ -379,6 +379,21 @@ where
     }
 }
 
+/// The `Duration` handed to the servo callback for one cycle.
+///
+/// The servo loop sends one command per nominal period. When a cycle overran
+/// and `k` whole periods passed without a command, the next cycle reports
+/// `(k + 1)` nominal periods; the first cycle reports the nominal period.
+/// Summing the reported periods gives the time since the session began, in
+/// whole command slots (the ruling in roplat-agents ecosystem C42, C44).
+fn cycle_period(nominal: Duration, since_last: Option<Duration>) -> Duration {
+    let Some(since_last) = since_last else {
+        return nominal;
+    };
+    let slots = (since_last.as_nanos() / nominal.as_nanos()).max(1);
+    nominal * u32::try_from(slots).unwrap_or(u32::MAX)
+}
+
 impl<T, const N: usize> ControlWith<JointPositionControl<N>> for JakaRobot<T, N>
 where
     [f64; N]: Serialize + for<'a> Deserialize<'a>,
@@ -413,13 +428,15 @@ where
         let robot_state = self.robot_state.clone();
         let before_observers = self.before_observers.clone();
         let after_observers = self.after_observers.clone();
-        let period = Self::CONTROL_PERIOD;
+        let nominal = Self::CONTROL_PERIOD;
 
         let result = (|| -> RobotResult<()> {
             let enter: RobotResult<()> = robot._servo_move(ServoMoveData { relflag: 1 })?.into();
             enter?;
+            let mut last_tick: Option<Instant> = None;
             loop {
                 let tick_start = Instant::now();
+                let period = cycle_period(nominal, last_tick.replace(tick_start).map(|t| tick_start - t));
                 let state: ArmState<N> = robot._get_data()?.into();
                 let full_state = robot_state
                     .read()
@@ -442,8 +459,8 @@ where
                 }
 
                 let elapsed = tick_start.elapsed();
-                if elapsed < period {
-                    sleep(period - elapsed);
+                if elapsed < nominal {
+                    sleep(nominal - elapsed);
                 }
             }
         })();
@@ -498,13 +515,15 @@ where
         let robot_state = self.robot_state.clone();
         let before_observers = self.before_observers.clone();
         let after_observers = self.after_observers.clone();
-        let period = Self::CONTROL_PERIOD;
+        let nominal = Self::CONTROL_PERIOD;
 
         let result = (|| -> RobotResult<()> {
             let enter: RobotResult<()> = robot._servo_move(ServoMoveData { relflag: 1 })?.into();
             enter?;
+            let mut last_tick: Option<Instant> = None;
             loop {
                 let tick_start = Instant::now();
+                let period = cycle_period(nominal, last_tick.replace(tick_start).map(|t| tick_start - t));
                 let state: ArmState<N> = robot._get_data()?.into();
                 let full_state = robot_state
                     .read()
@@ -527,8 +546,8 @@ where
                 }
 
                 let elapsed = tick_start.elapsed();
-                if elapsed < period {
-                    sleep(period - elapsed);
+                if elapsed < nominal {
+                    sleep(nominal - elapsed);
                 }
             }
         })();

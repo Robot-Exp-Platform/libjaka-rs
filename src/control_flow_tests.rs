@@ -201,3 +201,19 @@ fn malformed_state_and_failed_cleanup_preserve_both_errors() {
     assert!(!robot.is_moving);
     assert_exit(&server.join().unwrap());
 }
+
+#[test]
+fn cycle_period_counts_missed_command_slots() {
+    use std::time::Duration;
+    let nominal = Duration::from_millis(8);
+    // First cycle: nominal period.
+    assert_eq!(super::cycle_period(nominal, None), nominal);
+    // On time, or a little late but within one slot: nominal.
+    assert_eq!(super::cycle_period(nominal, Some(Duration::from_micros(8_300))), nominal);
+    assert_eq!(super::cycle_period(nominal, Some(Duration::from_micros(15_900))), nominal);
+    // One whole slot missed: 2 x 8 ms; two missed: 3 x 8 ms.
+    assert_eq!(super::cycle_period(nominal, Some(Duration::from_micros(16_100))), 2 * nominal);
+    assert_eq!(super::cycle_period(nominal, Some(Duration::from_millis(25))), 3 * nominal);
+    // Faster than nominal (should not happen with the sleep): still one slot.
+    assert_eq!(super::cycle_period(nominal, Some(Duration::from_millis(3))), nominal);
+}
