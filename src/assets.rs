@@ -56,8 +56,7 @@ pub fn install_jaka_archive(archive: &[u8], assets: &Path) -> RobotResult<()> {
     // `extract` refuses entries that would land outside `assets`.
     zip.extract(assets)
         .map_err(zip_error("failed to extract assets archive"))?;
-    fs::write(marker_path(assets), JAKA_ASSETS_VERSION)
-        .map_err(io_error("failed to write marker"))
+    fs::write(marker_path(assets), JAKA_ASSETS_VERSION).map_err(io_error("failed to write marker"))
 }
 
 fn is_installed(assets: &Path) -> bool {
@@ -68,10 +67,7 @@ fn is_installed(assets: &Path) -> bool {
 
 /// Next to the asset directory, as earlier versions wrote it.
 fn marker_path(assets: &Path) -> PathBuf {
-    assets
-        .parent()
-        .unwrap_or(assets)
-        .join(JAKA_MARKER_FILE)
+    assets.parent().unwrap_or(assets).join(JAKA_MARKER_FILE)
 }
 
 fn download(url: &str) -> RobotResult<Vec<u8>> {

@@ -1,7 +1,8 @@
 use std::f64::consts::{FRAC_PI_2, PI};
 
 use roplat_behavior::{
-    EndPoint, EndPointPose, Joints, Pose, RobotDescription, RobotResult, to_radians_array,
+    CartesianLimits, EndPoint, EndPointPose, JointLimits, Joints, Pose, RobotDescription,
+    RobotResult, to_radians_array,
 };
 use roplat_kinematics::{ArmForwardKinematics, DhParam};
 
@@ -22,17 +23,24 @@ impl RobotDescription for JakaS5 {
 impl Joints<6> for JakaS5 {
     const JOINT_DEFAULT: [f64; 6] = [0., 0., 0., 0., 0., 0.];
     const JOINT_PACKED: [f64; 6] = to_radians_array([-90., 0., 152., 120., 0., 0.]);
-    const JOINT_MIN: [f64; 6] = to_radians_array([-360., -85., -175., -85., -360., -360.]);
-    const JOINT_MAX: [f64; 6] = to_radians_array([360., 265., 175., 265., 360., 360.]);
-    const JOINT_VEL_BOUND: [f64; 6] = [PI; 6];
-    const JOINT_ACC_BOUND: [f64; 6] = [PI * 4.; 6];
+    const JOINT_LIMITS: JointLimits<6> = JointLimits {
+        dq_max: [PI; 6],
+        ddq_max: [PI * 4.; 6],
+        ..JointLimits::positions(
+            to_radians_array([-360., -85., -175., -85., -360., -360.]),
+            to_radians_array([360., 265., 175., 265., 360., 360.]),
+        )
+    };
 }
 
 impl EndPoint for JakaS5 {
-    const CARTESIAN_VEL_BOUND: f64 = 3.0;
-    const CARTESIAN_ACC_BOUND: f64 = 8.0;
-    const ROTATION_VEL_BOUND: f64 = PI;
-    const ROTATION_ACC_BOUND: f64 = PI * 4.;
+    const CARTESIAN_LIMITS: CartesianLimits = CartesianLimits {
+        linear_velocity_max: 3.0,
+        linear_acceleration_max: 8.0,
+        angular_velocity_max: PI,
+        angular_acceleration_max: PI * 4.,
+        ..CartesianLimits::UNBOUNDED
+    };
 }
 
 impl EndPointPose for JakaS5 {
@@ -46,12 +54,42 @@ impl EndPointPose for JakaS5 {
 
 impl ArmForwardKinematics<6> for JakaS5 {
     const DH: [DhParam; 6] = [
-        DhParam::DH { theta: 0., d: 0.12015, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0., r: 0.430, alpha: 0. },
-        DhParam::DH { theta: 0., d: 0., r: 0.3685, alpha: 0. },
-        DhParam::DH { theta: 0., d: 0.114, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0.1135, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0.1175, r: 0., alpha: 0. },
+        DhParam::DH {
+            theta: 0.,
+            d: 0.12015,
+            r: 0.,
+            alpha: FRAC_PI_2,
+        },
+        DhParam::DH {
+            theta: 0.,
+            d: 0.,
+            r: 0.430,
+            alpha: 0.,
+        },
+        DhParam::DH {
+            theta: 0.,
+            d: 0.,
+            r: 0.3685,
+            alpha: 0.,
+        },
+        DhParam::DH {
+            theta: 0.,
+            d: 0.114,
+            r: 0.,
+            alpha: FRAC_PI_2,
+        },
+        DhParam::DH {
+            theta: 0.,
+            d: 0.1135,
+            r: 0.,
+            alpha: FRAC_PI_2,
+        },
+        DhParam::DH {
+            theta: 0.,
+            d: 0.1175,
+            r: 0.,
+            alpha: 0.,
+        },
     ];
 }
 roplat_kinematics::dh_kinematics!(JakaS5, 6);
@@ -63,17 +101,24 @@ impl RobotDescription for JakaS7 {
 impl Joints<6> for JakaS7 {
     const JOINT_DEFAULT: [f64; 6] = [0., 0., 0., 0., 0., 0.];
     const JOINT_PACKED: [f64; 6] = to_radians_array([-90., 0., 152., 120., 0., 0.]);
-    const JOINT_MIN: [f64; 6] = to_radians_array([-360., -85., -175., -85., -360., -360.]);
-    const JOINT_MAX: [f64; 6] = to_radians_array([360., 265., 175., 265., 360., 360.]);
-    const JOINT_VEL_BOUND: [f64; 6] = [PI; 6];
-    const JOINT_ACC_BOUND: [f64; 6] = [PI * 4.; 6];
+    const JOINT_LIMITS: JointLimits<6> = JointLimits {
+        dq_max: [PI; 6],
+        ddq_max: [PI * 4.; 6],
+        ..JointLimits::positions(
+            to_radians_array([-360., -85., -175., -85., -360., -360.]),
+            to_radians_array([360., 265., 175., 265., 360., 360.]),
+        )
+    };
 }
 
 impl EndPoint for JakaS7 {
-    const CARTESIAN_VEL_BOUND: f64 = 2.5;
-    const CARTESIAN_ACC_BOUND: f64 = 8.0;
-    const ROTATION_VEL_BOUND: f64 = PI;
-    const ROTATION_ACC_BOUND: f64 = PI * 4.;
+    const CARTESIAN_LIMITS: CartesianLimits = CartesianLimits {
+        linear_velocity_max: 2.5,
+        linear_acceleration_max: 8.0,
+        angular_velocity_max: PI,
+        angular_acceleration_max: PI * 4.,
+        ..CartesianLimits::UNBOUNDED
+    };
 }
 
 impl EndPointPose for JakaS7 {
@@ -87,12 +132,42 @@ impl EndPointPose for JakaS7 {
 
 impl ArmForwardKinematics<6> for JakaS7 {
     const DH: [DhParam; 6] = [
-        DhParam::DH { theta: 0., d: 0.12015, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0., r: 0.360, alpha: 0. },
-        DhParam::DH { theta: 0., d: 0., r: 0.3035, alpha: 0. },
-        DhParam::DH { theta: 0., d: 0.11501, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0.1135, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0.1175, r: 0., alpha: 0. },
+        DhParam::DH {
+            theta: 0.,
+            d: 0.12015,
+            r: 0.,
+            alpha: FRAC_PI_2,
+        },
+        DhParam::DH {
+            theta: 0.,
+            d: 0.,
+            r: 0.360,
+            alpha: 0.,
+        },
+        DhParam::DH {
+            theta: 0.,
+            d: 0.,
+            r: 0.3035,
+            alpha: 0.,
+        },
+        DhParam::DH {
+            theta: 0.,
+            d: 0.11501,
+            r: 0.,
+            alpha: FRAC_PI_2,
+        },
+        DhParam::DH {
+            theta: 0.,
+            d: 0.1135,
+            r: 0.,
+            alpha: FRAC_PI_2,
+        },
+        DhParam::DH {
+            theta: 0.,
+            d: 0.1175,
+            r: 0.,
+            alpha: 0.,
+        },
     ];
 }
 roplat_kinematics::dh_kinematics!(JakaS7, 6);
@@ -104,17 +179,24 @@ impl RobotDescription for JakaS12 {
 impl Joints<6> for JakaS12 {
     const JOINT_DEFAULT: [f64; 6] = [0., 0., 0., 0., 0., 0.];
     const JOINT_PACKED: [f64; 6] = to_radians_array([-90., 0., 152., 120., 0., 0.]);
-    const JOINT_MIN: [f64; 6] = to_radians_array([-360., -85., -175., -85., -360., -360.]);
-    const JOINT_MAX: [f64; 6] = to_radians_array([360., 265., 175., 265., 360., 360.]);
-    const JOINT_VEL_BOUND: [f64; 6] = to_radians_array([120., 120., 120., 180., 180., 180.]);
-    const JOINT_ACC_BOUND: [f64; 6] = [PI * 4.; 6];
+    const JOINT_LIMITS: JointLimits<6> = JointLimits {
+        dq_max: to_radians_array([120., 120., 120., 180., 180., 180.]),
+        ddq_max: [PI * 4.; 6],
+        ..JointLimits::positions(
+            to_radians_array([-360., -85., -175., -85., -360., -360.]),
+            to_radians_array([360., 265., 175., 265., 360., 360.]),
+        )
+    };
 }
 
 impl EndPoint for JakaS12 {
-    const CARTESIAN_VEL_BOUND: f64 = 3.0;
-    const CARTESIAN_ACC_BOUND: f64 = 8.0;
-    const ROTATION_VEL_BOUND: f64 = PI;
-    const ROTATION_ACC_BOUND: f64 = PI * 4.;
+    const CARTESIAN_LIMITS: CartesianLimits = CartesianLimits {
+        linear_velocity_max: 3.0,
+        linear_acceleration_max: 8.0,
+        angular_velocity_max: PI,
+        angular_acceleration_max: PI * 4.,
+        ..CartesianLimits::UNBOUNDED
+    };
 }
 
 impl EndPointPose for JakaS12 {
@@ -128,12 +210,42 @@ impl EndPointPose for JakaS12 {
 
 impl ArmForwardKinematics<6> for JakaS12 {
     const DH: [DhParam; 6] = [
-        DhParam::DH { theta: 0., d: 0.14265, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0., r: 0.595, alpha: 0. },
-        DhParam::DH { theta: 0., d: 0., r: 0.5715, alpha: 0. },
-        DhParam::DH { theta: 0., d: 0.1315, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0.115, r: 0., alpha: FRAC_PI_2 },
-        DhParam::DH { theta: 0., d: 0.112, r: 0., alpha: 0. },
+        DhParam::DH {
+            theta: 0.,
+            d: 0.14265,
+            r: 0.,
+            alpha: FRAC_PI_2,
+        },
+        DhParam::DH {
+            theta: 0.,
+            d: 0.,
+            r: 0.595,
+            alpha: 0.,
+        },
+        DhParam::DH {
+            theta: 0.,
+            d: 0.,
+            r: 0.5715,
+            alpha: 0.,
+        },
+        DhParam::DH {
+            theta: 0.,
+            d: 0.1315,
+            r: 0.,
+            alpha: FRAC_PI_2,
+        },
+        DhParam::DH {
+            theta: 0.,
+            d: 0.115,
+            r: 0.,
+            alpha: FRAC_PI_2,
+        },
+        DhParam::DH {
+            theta: 0.,
+            d: 0.112,
+            r: 0.,
+            alpha: 0.,
+        },
     ];
 }
 roplat_kinematics::dh_kinematics!(JakaS12, 6);

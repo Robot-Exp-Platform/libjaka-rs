@@ -1,9 +1,10 @@
 use crate::{JAKA_FREQUENCY, JAKA_VERSION, network::NetWork, robot_impl::RobotImpl, types::*};
 
 use roplat_behavior::{
-    Arm, ArmState, CartesianPoseControl, ControlObservation, ControlObserver, ControlStep,
-    ControlWith, EndPoint, EndPointPose, FlangeSpace, JointPositionControl, JointSpace, JointState,
-    Joints, LoadState, MotionLimits, MoveTo, MoveTraj, Pose, Robot, RobotException, RobotResult,
+    Arm, ArmState, CartesianPoseControl, ControlExit, ControlObservation, ControlObserver,
+    ControlStep, ControlWith, EndPoint, EndPointPose, FlangeSpace, JointPositionControl,
+    JointSpace, JointState, Joints, LoadState, MotionLimits, MoveTo, MoveTraj, Pose, Robot,
+    RobotException, RobotResult,
 };
 use rsruckig::{
     error::ThrowErrorHandler,
@@ -39,14 +40,14 @@ fn notify_control_observers(
         observer(state, duration);
     }
 }
-/// JAKA 机器人驱动实体。
+/// The JAKA robot driver.
 ///
-/// `T` 是具体机器人型号标记，`N` 是关节数量。该类型同时实现
-/// [`Robot`]、[`Arm`]、[`MoveTo`]、[`MoveTraj`] 和 [`ControlWith`] 等
-/// `roplat_behavior` 行为特征，把 JAKA TCP/JSON 指令转换为统一的行为接口。
+/// `T` marks the robot model and `N` is the joint count. The type implements the
+/// `roplat_behavior` contracts [`Robot`], [`Arm`], [`MoveTo`], [`MoveTraj`] and
+/// [`ControlWith`], turning JAKA TCP/JSON commands into the shared behavior interface.
 ///
-/// 外部调用应优先使用 `roplat_behavior::behavior::*` 中的统一入口，例如
-/// `move_to::<JointSpace<N>>()` 和 `control_with::<JointPositionControl<N>, _>()`。
+/// Callers should prefer the shared entry points of `roplat_behavior::behavior::*`, such as
+/// `move_to::<JointSpace<N>>()` and `control_with::<JointPositionControl<N>, _>()`.
 pub struct JakaRobot<T, const N: usize> {
     pub(crate) marker: PhantomData<T>,
     pub robot_impl: RobotImpl<N>,
@@ -56,7 +57,7 @@ pub struct JakaRobot<T, const N: usize> {
     #[allow(dead_code)]
     pub(crate) streaming_handle: thread::JoinHandle<()>,
     pub(crate) is_moving: bool,
-    /// 运动指令使用的限制；`scale` 缩放速度和加速度。
+    /// The limits motion commands use; `scale` scales speed and acceleration.
     pub(crate) limits: MotionLimits<N>,
 }
 
@@ -80,10 +81,19 @@ where
     pub fn set_tio_vout(&mut self, tio: TioVout) -> RobotResult<()> {
         let data = match tio {
             TioVout::Enable(mode) => match mode {
-                TioVoutMode::V12V => SetTioVoutParamData { tio_vout_ena: 1, tio_vout_vol: 0 },
-                TioVoutMode::V24V => SetTioVoutParamData { tio_vout_ena: 1, tio_vout_vol: 1 },
+                TioVoutMode::V12V => SetTioVoutParamData {
+                    tio_vout_ena: 1,
+                    tio_vout_vol: 0,
+                },
+                TioVoutMode::V24V => SetTioVoutParamData {
+                    tio_vout_ena: 1,
+                    tio_vout_vol: 1,
+                },
             },
-            TioVout::Disable => SetTioVoutParamData { tio_vout_ena: 0, tio_vout_vol: 0 },
+            TioVout::Disable => SetTioVoutParamData {
+                tio_vout_ena: 0,
+                tio_vout_vol: 0,
+            },
         };
         self.robot_impl._set_tio_vout_param(data)?.into()
     }
@@ -110,7 +120,7 @@ where
         Ok(tio)
     }
 
-    /// 控制器报告的法兰位姿；读取失败时为单位位姿。
+    /// The flange pose the controller reports; the identity when the read fails.
     pub(crate) fn flange_pose(&self) -> Pose {
         let mut robot_impl = self.robot_impl.clone();
         robot_impl
@@ -119,7 +129,7 @@ where
             .unwrap_or_default()
     }
 
-    /// 向控制器读取法兰位姿，读取失败时返回错误。相对运动以它为起点。
+    /// Reads the flange pose from the controller, failing when the read fails. Relative motions start from it.
     pub(crate) fn read_flange_pose(&mut self) -> RobotResult<Pose> {
         let state: ArmState<N> = self.robot_impl._get_data()?.into();
         state.flange.meas.pose().ok_or_else(|| {
@@ -133,10 +143,10 @@ where
     [f64; N]: Serialize + for<'a> Deserialize<'a>,
     Self: Joints<N> + EndPoint,
 {
-    /// 连接指定 IP 的 JAKA 控制器并创建机器人对象。
+    /// Connects to the JAKA controller at `ip` and creates the robot.
     ///
-    /// 运动限制取该型号声明的范围，并使用较保守的 `0.05` 作为默认
-    /// 运动倍率；用 [`Arm::set_motion_limits`] 修改。
+    /// The motion limits are the envelope the model declares, at a conservative
+    /// default speed fraction of `0.05`; change them with [`Arm::set_motion_limits`].
     pub fn new(ip: &str) -> Self {
         let robot_state = NetWork::state_connect(ip);
         Self {
@@ -239,7 +249,10 @@ where
         Ok(data.into())
     }
     fn set_load(&mut self, load: LoadState) -> RobotResult<()> {
-        let set_load_data = SetPayloadData { mass: load.mass, centroid: load.center_of_mass };
+        let set_load_data = SetPayloadData {
+            mass: load.mass,
+            centroid: load.center_of_mass,
+        };
         self.robot_impl._set_payload(set_load_data)?.into()
     }
 
@@ -272,7 +285,7 @@ where
                 "Robot is moving".to_string(),
             ));
         }
-        // JAKA 的关节运动只取一个速度和加速度，用各关节限制中最紧的一个。
+        // A JAKA joint motion takes one speed and one acceleration: the tightest joint bound of each.
         let limits = self.limits.scaled_joint();
         let tightest = |bounds: [f64; N]| bounds.into_iter().fold(f64::INFINITY, f64::min);
         let move_data = JointMoveData::<N> {
@@ -298,8 +311,8 @@ where
         let limits = self.limits.scaled_cartesian();
         let move_data = MoveLData {
             cart_position: pose_to_jaka_cart(target),
-            speed: limits.linear_velocity * 1000.0, // m/s -> mm/s
-            accel: limits.linear_acceleration * 1000.0,
+            speed: limits.linear_velocity_max * 1000.0, // m/s -> mm/s
+            accel: limits.linear_acceleration_max * 1000.0,
             relflag: 0,
         };
         self.run_blocking_move(|robot| robot._move_l(move_data))
@@ -311,10 +324,10 @@ where
     [f64; N]: Serialize + for<'a> Deserialize<'a>,
     Self: Joints<N>,
 {
-    /// 跟随已经离散采样好的关节轨迹。
+    /// Follows an already sampled joint trajectory.
     ///
-    /// 每个采样点会通过 `JointPositionControl` 的伺服通道发送。空轨迹
-    /// 视为无操作；轨迹结束时会重复发送最后一个采样点并退出控制循环。
+    /// Every sample goes out through the `JointPositionControl` servo channel. An empty
+    /// trajectory is a no-op; at the end the last sample is sent again and the loop exits.
     fn move_traj(&mut self, traj: Vec<[f64; N]>) -> RobotResult<()> {
         if traj.is_empty() {
             return Ok(());
@@ -330,11 +343,11 @@ where
         })
     }
 
-    /// JAKA 驱动当前没有连续路径采样器。
+    /// The JAKA driver has no continuous-path sampler yet.
     ///
-    /// 如果需要从连续路径生成轨迹，请在上层先采样为离散轨迹后调用
-    /// [`MoveTraj::move_traj`]，或使用 [`MoveTraj::move_waypoints`] 让 Ruckig
-    /// 进行路点插值。
+    /// To follow a continuous path, sample it into a trajectory first and call
+    /// [`MoveTraj::move_traj`], or let Ruckig interpolate waypoints through
+    /// [`MoveTraj::move_waypoints`].
     fn move_path<F>(&mut self, _path: F) -> RobotResult<()>
     where
         F: Fn(f64) -> Option<[f64; N]>,
@@ -354,7 +367,7 @@ where
         let mut input = InputParameter::new(None);
         let mut output = OutputParameter::new(None);
 
-        // Ruckig 把无穷大的加加速度限制视为不约束。
+        // Ruckig treats an infinite jerk bound as no constraint.
         let limits = self.limits.scaled_joint();
         input.max_velocity = DataArrayOrVec::Stack(limits.dq_max);
         input.max_acceleration = DataArrayOrVec::Stack(limits.ddq_max);
@@ -407,12 +420,12 @@ where
             .unwrap_or([0.; N])
     }
 
-    /// 使用 JAKA `servo_j` 通道执行阻塞的关节位置实时控制。
+    /// Blocking realtime joint-position control through the JAKA `servo_j` channel.
     ///
-    /// 每个周期读取机器人状态，将其中的关节状态传给 `closure`，再把
-    /// 闭包返回的目标关节角发送给控制器。闭包返回 `done = true` 时，
-    /// 当前周期命令仍会先下发，然后退出伺服模式。
-    /// `Break(())` 则不发送本周期命令，直接执行伺服退出协议。
+    /// Every cycle reads the robot state, hands its joint state to `closure` and sends
+    /// the returned joint target to the controller. When the closure reports `done = true`,
+    /// the cycle's command is still sent before servo mode is left.
+    /// `Break` sends no command for the cycle and runs the servo exit protocol at once.
     fn control_with_flow<F>(&mut self, mut closure: F) -> RobotResult<()>
     where
         F: FnMut(JointState<N>, Duration) -> ControlStep<[f64; N]>,
@@ -436,7 +449,10 @@ where
             let mut last_tick: Option<Instant> = None;
             loop {
                 let tick_start = Instant::now();
-                let period = cycle_period(nominal, last_tick.replace(tick_start).map(|t| tick_start - t));
+                let period = cycle_period(
+                    nominal,
+                    last_tick.replace(tick_start).map(|t| tick_start - t),
+                );
                 let state: ArmState<N> = robot._get_data()?.into();
                 let full_state = robot_state
                     .read()
@@ -445,12 +461,17 @@ where
                 notify_control_observers(&before_observers, &full_state, period);
                 let step = closure(state.joint, period);
                 notify_control_observers(&after_observers, &full_state, period);
-                let ControlFlow::Continue((joint, finished)) = step else {
-                    return Ok(());
+                let (joint, finished) = match step {
+                    ControlFlow::Continue(step) => step,
+                    ControlFlow::Break(ControlExit::Stopped) => return Ok(()),
+                    ControlFlow::Break(ControlExit::Failed(error)) => return Err(error),
                 };
 
                 let applied: RobotResult<()> = robot
-                    ._servo_j(ServoJData::<N> { joint_angles: joint.map(f64::to_degrees), relflag: 0 })?
+                    ._servo_j(ServoJData::<N> {
+                        joint_angles: joint.map(f64::to_degrees),
+                        relflag: 0,
+                    })?
                     .into();
                 applied?;
 
@@ -494,12 +515,12 @@ where
             .unwrap_or_default()
     }
 
-    /// 使用 JAKA `servo_p` 通道执行阻塞的笛卡尔位姿实时控制。
+    /// Blocking realtime Cartesian-pose control through the JAKA `servo_p` channel.
     ///
-    /// 每个周期读取完整 [`ArmState`]，将闭包返回的法兰位姿从
-    /// `roplat_behavior` 约定的米/弧度转换为 JAKA 使用的毫米/角度后下发。
-    /// 与关节控制一致，`done = true` 的周期仍会先发送命令再退出。
-    /// `Break(())` 则不发送本周期命令，直接执行伺服退出协议。
+    /// Every cycle reads the full [`ArmState`] and sends the flange pose the closure returns,
+    /// converted from `roplat_behavior`'s metres and radians to JAKA's millimetres and degrees.
+    /// As in joint control, a `done = true` cycle sends its command before exiting.
+    /// `Break` sends no command for the cycle and runs the servo exit protocol at once.
     fn control_with_flow<F>(&mut self, mut closure: F) -> RobotResult<()>
     where
         F: FnMut(ArmState<N>, Duration) -> ControlStep<Pose>,
@@ -523,7 +544,10 @@ where
             let mut last_tick: Option<Instant> = None;
             loop {
                 let tick_start = Instant::now();
-                let period = cycle_period(nominal, last_tick.replace(tick_start).map(|t| tick_start - t));
+                let period = cycle_period(
+                    nominal,
+                    last_tick.replace(tick_start).map(|t| tick_start - t),
+                );
                 let state: ArmState<N> = robot._get_data()?.into();
                 let full_state = robot_state
                     .read()
@@ -532,12 +556,17 @@ where
                 notify_control_observers(&before_observers, &full_state, period);
                 let step = closure(state, period);
                 notify_control_observers(&after_observers, &full_state, period);
-                let ControlFlow::Continue((pose, finished)) = step else {
-                    return Ok(());
+                let (pose, finished) = match step {
+                    ControlFlow::Continue(step) => step,
+                    ControlFlow::Break(ControlExit::Stopped) => return Ok(()),
+                    ControlFlow::Break(ControlExit::Failed(error)) => return Err(error),
                 };
 
                 let applied: RobotResult<()> = robot
-                    ._servo_p(ServoPData { cat_position: pose_to_jaka_cart(pose), relflag: 0 })?
+                    ._servo_p(ServoPData {
+                        cat_position: pose_to_jaka_cart(pose),
+                        relflag: 0,
+                    })?
                     .into();
                 applied?;
 
@@ -567,8 +596,8 @@ where
     }
 }
 
-/// 将 `roplat_behavior` 的位姿单位（米/弧度）转换为 JAKA 笛卡尔指令单位
-/// （毫米/角度）。
+/// Converts a `roplat_behavior` pose (metres, radians) to JAKA's Cartesian command
+/// units (millimetres, degrees).
 fn pose_to_jaka_cart(pose: Pose) -> [f64; 6] {
     let mut cart: [f64; 6] = pose.into();
     for i in 0..3 {
