@@ -1,5 +1,6 @@
 //! Exercise the real servo loops against a loopback JSON controller.
 use super::*;
+use roplat_behavior::ControlExit;
 use serde_json::{Value, json};
 use std::{
     io::{Read, Write},
@@ -134,7 +135,7 @@ fn joint_break_skips_servo_j_and_exits_session() {
     let mut calls = 0;
     <_ as ControlWith<JointPositionControl<6>>>::control_with_flow(&mut robot, |_, _| {
         calls += 1;
-        ControlFlow::Break(())
+        ControlFlow::Break(ControlExit::Stopped)
     })
     .unwrap();
     assert_eq!(calls, 1);
@@ -152,7 +153,7 @@ fn cartesian_async_break_skips_servo_p_and_exits_session() {
         &mut robot,
         async |_, _| {
             calls += 1;
-            ControlFlow::Break(())
+            ControlFlow::Break(ControlExit::Stopped)
         },
     )
     .unwrap();
@@ -209,11 +210,26 @@ fn cycle_period_counts_missed_command_slots() {
     // First cycle: nominal period.
     assert_eq!(super::cycle_period(nominal, None), nominal);
     // On time, or a little late but within one slot: nominal.
-    assert_eq!(super::cycle_period(nominal, Some(Duration::from_micros(8_300))), nominal);
-    assert_eq!(super::cycle_period(nominal, Some(Duration::from_micros(15_900))), nominal);
+    assert_eq!(
+        super::cycle_period(nominal, Some(Duration::from_micros(8_300))),
+        nominal
+    );
+    assert_eq!(
+        super::cycle_period(nominal, Some(Duration::from_micros(15_900))),
+        nominal
+    );
     // One whole slot missed: 2 x 8 ms; two missed: 3 x 8 ms.
-    assert_eq!(super::cycle_period(nominal, Some(Duration::from_micros(16_100))), 2 * nominal);
-    assert_eq!(super::cycle_period(nominal, Some(Duration::from_millis(25))), 3 * nominal);
+    assert_eq!(
+        super::cycle_period(nominal, Some(Duration::from_micros(16_100))),
+        2 * nominal
+    );
+    assert_eq!(
+        super::cycle_period(nominal, Some(Duration::from_millis(25))),
+        3 * nominal
+    );
     // Faster than nominal (should not happen with the sleep): still one slot.
-    assert_eq!(super::cycle_period(nominal, Some(Duration::from_millis(3))), nominal);
+    assert_eq!(
+        super::cycle_period(nominal, Some(Duration::from_millis(3))),
+        nominal
+    );
 }

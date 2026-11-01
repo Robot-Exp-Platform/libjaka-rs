@@ -17,7 +17,9 @@ pub struct NetWork {
 impl NetWork {
     #[cfg(test)]
     pub(crate) fn from_test_stream(stream: TcpStream) -> Self {
-        Self { tcp_cmd: Some(Arc::new(Mutex::new(stream))) }
+        Self {
+            tcp_cmd: Some(Arc::new(Mutex::new(stream))),
+        }
     }
 
     pub fn new(ip: &str) -> NetWork {
