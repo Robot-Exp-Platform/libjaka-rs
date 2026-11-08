@@ -51,42 +51,12 @@ impl EndPointPose for JakaA5 {
 
 impl ArmForwardKinematics<6> for JakaA5 {
     const DH: [DhParam; 6] = [
-        DhParam::DH {
-            theta: 0.,
-            d: 0.12015,
-            r: 0.,
-            alpha: FRAC_PI_2,
-        },
-        DhParam::DH {
-            theta: 0.,
-            d: 0.,
-            r: 0.430,
-            alpha: 0.,
-        },
-        DhParam::DH {
-            theta: 0.,
-            d: 0.,
-            r: 0.3685,
-            alpha: 0.,
-        },
-        DhParam::DH {
-            theta: 0.,
-            d: 0.114,
-            r: 0.,
-            alpha: FRAC_PI_2,
-        },
-        DhParam::DH {
-            theta: 0.,
-            d: 0.1135,
-            r: 0.,
-            alpha: FRAC_PI_2,
-        },
-        DhParam::DH {
-            theta: 0.,
-            d: 0.107,
-            r: 0.,
-            alpha: 0.,
-        },
+        DhParam::DH { theta: 0., d: 0.12015, r: 0., alpha: FRAC_PI_2 },
+        DhParam::DH { theta: 0., d: 0., r: 0.430, alpha: 0. },
+        DhParam::DH { theta: 0., d: 0., r: 0.3685, alpha: 0. },
+        DhParam::DH { theta: 0., d: 0.114, r: 0., alpha: FRAC_PI_2 },
+        DhParam::DH { theta: 0., d: 0.1135, r: 0., alpha: FRAC_PI_2 },
+        DhParam::DH { theta: 0., d: 0.107, r: 0., alpha: 0. },
     ];
 }
 roplat_kinematics::dh_kinematics!(JakaA5, 6);
@@ -126,42 +96,12 @@ impl EndPointPose for JakaA12 {
 
 impl ArmForwardKinematics<6> for JakaA12 {
     const DH: [DhParam; 6] = [
-        DhParam::DH {
-            theta: 0.,
-            d: 0.14265,
-            r: 0.,
-            alpha: FRAC_PI_2,
-        },
-        DhParam::DH {
-            theta: 0.,
-            d: 0.,
-            r: 0.770,
-            alpha: 0.,
-        },
-        DhParam::DH {
-            theta: 0.,
-            d: 0.03750,
-            r: 0.,
-            alpha: -FRAC_PI_2,
-        },
-        DhParam::DH {
-            theta: 0.,
-            d: 0.5515,
-            r: 0.,
-            alpha: FRAC_PI_2,
-        },
-        DhParam::DH {
-            theta: 0.,
-            d: 0.115,
-            r: 0.,
-            alpha: -FRAC_PI_2,
-        },
-        DhParam::DH {
-            theta: 0.,
-            d: 0.1035,
-            r: 0.,
-            alpha: 0.,
-        },
+        DhParam::DH { theta: 0., d: 0.14265, r: 0., alpha: FRAC_PI_2 },
+        DhParam::DH { theta: 0., d: 0., r: 0.770, alpha: 0. },
+        DhParam::DH { theta: 0., d: 0.03750, r: 0., alpha: -FRAC_PI_2 },
+        DhParam::DH { theta: 0., d: 0.5515, r: 0., alpha: FRAC_PI_2 },
+        DhParam::DH { theta: 0., d: 0.115, r: 0., alpha: -FRAC_PI_2 },
+        DhParam::DH { theta: 0., d: 0.1035, r: 0., alpha: 0. },
     ];
 }
 roplat_kinematics::dh_kinematics!(JakaA12, 6);
@@ -204,42 +144,12 @@ impl EndPointPose for JakaA20 {
 
 impl ArmForwardKinematics<6> for JakaA20 {
     const DH: [DhParam; 6] = [
-        DhParam::DH {
-            theta: 0.,
-            d: 0.1965,
-            r: 0.,
-            alpha: FRAC_PI_2,
-        },
-        DhParam::DH {
-            theta: 0.,
-            d: 0.,
-            r: 0.897,
-            alpha: 0.,
-        },
-        DhParam::DH {
-            theta: 0.,
-            d: 0.,
-            r: 0.7445,
-            alpha: 0.,
-        },
-        DhParam::DH {
-            theta: 0.,
-            d: 0.18835,
-            r: 0.,
-            alpha: FRAC_PI_2,
-        },
-        DhParam::DH {
-            theta: 0.,
-            d: 0.1385,
-            r: 0.,
-            alpha: FRAC_PI_2,
-        },
-        DhParam::DH {
-            theta: 0.,
-            d: 0.1205,
-            r: 0.,
-            alpha: 0.,
-        },
+        DhParam::DH { theta: 0., d: 0.1965, r: 0., alpha: FRAC_PI_2 },
+        DhParam::DH { theta: 0., d: 0., r: 0.897, alpha: 0. },
+        DhParam::DH { theta: 0., d: 0., r: 0.7445, alpha: 0. },
+        DhParam::DH { theta: 0., d: 0.18835, r: 0., alpha: FRAC_PI_2 },
+        DhParam::DH { theta: 0., d: 0.1385, r: 0., alpha: FRAC_PI_2 },
+        DhParam::DH { theta: 0., d: 0.1205, r: 0., alpha: 0. },
     ];
 }
 roplat_kinematics::dh_kinematics!(JakaA20, 6);

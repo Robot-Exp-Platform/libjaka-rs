@@ -6,16 +6,10 @@ fn main() -> RobotResult<()> {
 
     robot.enable()?;
     robot.set_motion_limits(robot.motion_limits().scaled(0.05))?;
-    robot.set_load(LoadState {
-        mass: 0.0,
-        center_of_mass: [0.0; 3],
-        inertia: [0.0; 9],
-    })?;
+    robot.set_load(LoadState { mass: 0.0, center_of_mass: [0.0; 3], inertia: [0.0; 9] })?;
     let result: RobotResult<()> = robot
         .robot_impl
-        ._set_clsn_sensitivity(SetClsnSensitivityData {
-            sensitivity_level: 3,
-        })?
+        ._set_clsn_sensitivity(SetClsnSensitivityData { sensitivity_level: 3 })?
         .into();
     result?;
 
