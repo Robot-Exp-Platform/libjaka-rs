@@ -63,30 +63,12 @@ impl EndPointPose for JakaMini2 {
 
 impl ArmForwardKinematics<6> for JakaMini2 {
     const DH: [DhParam; 6] = [
-        DhParam::Iso3RPY {
-            pos: [0., 0., 0.187],
-            rpy: [0.; 3],
-        },
-        DhParam::Iso3RPY {
-            pos: [0., -0.006, 0.],
-            rpy: [FRAC_PI_2, -FRAC_PI_2, 0.],
-        },
-        DhParam::Iso3RPY {
-            pos: [0.21, 0., 0.],
-            rpy: [0., 0., -FRAC_PI_2],
-        },
-        DhParam::Iso3RPY {
-            pos: [0., 0.2105, 0.],
-            rpy: [-FRAC_PI_2, 0., 0.],
-        },
-        DhParam::Iso3RPY {
-            pos: [0., 0., 0.],
-            rpy: [FRAC_PI_2, 0., 0.],
-        },
-        DhParam::Iso3RPY {
-            pos: [0., 0.1593, 0.],
-            rpy: [-FRAC_PI_2, 0., 0.],
-        },
+        DhParam::Iso3RPY { pos: [0., 0., 0.187], rpy: [0.; 3] },
+        DhParam::Iso3RPY { pos: [0., -0.006, 0.], rpy: [FRAC_PI_2, -FRAC_PI_2, 0.] },
+        DhParam::Iso3RPY { pos: [0.21, 0., 0.], rpy: [0., 0., -FRAC_PI_2] },
+        DhParam::Iso3RPY { pos: [0., 0.2105, 0.], rpy: [-FRAC_PI_2, 0., 0.] },
+        DhParam::Iso3RPY { pos: [0., 0., 0.], rpy: [FRAC_PI_2, 0., 0.] },
+        DhParam::Iso3RPY { pos: [0., 0.1593, 0.], rpy: [-FRAC_PI_2, 0., 0.] },
     ];
 }
 roplat_kinematics::dh_kinematics!(JakaMini2, 6);

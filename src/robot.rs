@@ -81,19 +81,10 @@ where
     pub fn set_tio_vout(&mut self, tio: TioVout) -> RobotResult<()> {
         let data = match tio {
             TioVout::Enable(mode) => match mode {
-                TioVoutMode::V12V => SetTioVoutParamData {
-                    tio_vout_ena: 1,
-                    tio_vout_vol: 0,
-                },
-                TioVoutMode::V24V => SetTioVoutParamData {
-                    tio_vout_ena: 1,
-                    tio_vout_vol: 1,
-                },
+                TioVoutMode::V12V => SetTioVoutParamData { tio_vout_ena: 1, tio_vout_vol: 0 },
+                TioVoutMode::V24V => SetTioVoutParamData { tio_vout_ena: 1, tio_vout_vol: 1 },
             },
-            TioVout::Disable => SetTioVoutParamData {
-                tio_vout_ena: 0,
-                tio_vout_vol: 0,
-            },
+            TioVout::Disable => SetTioVoutParamData { tio_vout_ena: 0, tio_vout_vol: 0 },
         };
         self.robot_impl._set_tio_vout_param(data)?.into()
     }
@@ -249,10 +240,7 @@ where
         Ok(data.into())
     }
     fn set_load(&mut self, load: LoadState) -> RobotResult<()> {
-        let set_load_data = SetPayloadData {
-            mass: load.mass,
-            centroid: load.center_of_mass,
-        };
+        let set_load_data = SetPayloadData { mass: load.mass, centroid: load.center_of_mass };
         self.robot_impl._set_payload(set_load_data)?.into()
     }
 
@@ -563,10 +551,7 @@ where
                 };
 
                 let applied: RobotResult<()> = robot
-                    ._servo_p(ServoPData {
-                        cat_position: pose_to_jaka_cart(pose),
-                        relflag: 0,
-                    })?
+                    ._servo_p(ServoPData { cat_position: pose_to_jaka_cart(pose), relflag: 0 })?
                     .into();
                 applied?;
 

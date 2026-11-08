@@ -101,11 +101,7 @@ impl JakaMini2 {
     fn set_load(&mut self, m: f64, x: [f64; 3], i: [f64; 9]) -> RobotResult<()> {
         <crate::JakaMini2 as Arm<6>>::set_load(
             &mut self.0,
-            LoadState {
-                mass: m,
-                center_of_mass: x,
-                inertia: i,
-            },
+            LoadState { mass: m, center_of_mass: x, inertia: i },
         )
     }
 
@@ -141,10 +137,7 @@ fn pose_to_cxx(pose: Pose) -> CxxPoseData {
     let mut values = Vec::with_capacity(7);
     values.extend_from_slice(&tran);
     values.extend_from_slice(&rot);
-    CxxPoseData {
-        kind: CxxPoseKind::Quat,
-        values,
-    }
+    CxxPoseData { kind: CxxPoseKind::Quat, values }
 }
 
 fn cxx_to_pose(data: CxxPoseData) -> RobotResult<Pose> {

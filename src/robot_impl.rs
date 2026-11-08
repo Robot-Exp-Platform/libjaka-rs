@@ -29,15 +29,11 @@ macro_rules! cmd_fn {
 impl<const N: usize> RobotImpl<N> {
     #[cfg(test)]
     pub(crate) fn from_test_stream(stream: std::net::TcpStream) -> Self {
-        Self {
-            network: NetWork::from_test_stream(stream),
-        }
+        Self { network: NetWork::from_test_stream(stream) }
     }
 
     pub fn new(ip: &str) -> Self {
-        RobotImpl {
-            network: NetWork::new(ip),
-        }
+        RobotImpl { network: NetWork::new(ip) }
     }
 }
 

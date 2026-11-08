@@ -44,42 +44,12 @@ impl EndPointPose for JakaA12L {
 
 impl ArmForwardKinematics<6> for JakaA12L {
     const DH: [DhParam; 6] = [
-        DhParam::DH {
-            theta: 0.,
-            d: 0.14165,
-            r: 0.,
-            alpha: FRAC_PI_2,
-        },
-        DhParam::DH {
-            theta: 0.,
-            d: 0.,
-            r: 0.770,
-            alpha: 0.,
-        },
-        DhParam::DH {
-            theta: 0.,
-            d: 0.03750,
-            r: 0.,
-            alpha: -FRAC_PI_2,
-        },
-        DhParam::DH {
-            theta: 0.,
-            d: 0.5515,
-            r: 0.,
-            alpha: FRAC_PI_2,
-        },
-        DhParam::DH {
-            theta: 0.,
-            d: 0.115,
-            r: 0.,
-            alpha: -FRAC_PI_2,
-        },
-        DhParam::DH {
-            theta: 0.,
-            d: 0.1338,
-            r: 0.,
-            alpha: 0.,
-        },
+        DhParam::DH { theta: 0., d: 0.14165, r: 0., alpha: FRAC_PI_2 },
+        DhParam::DH { theta: 0., d: 0., r: 0.770, alpha: 0. },
+        DhParam::DH { theta: 0., d: 0.03750, r: 0., alpha: -FRAC_PI_2 },
+        DhParam::DH { theta: 0., d: 0.5515, r: 0., alpha: FRAC_PI_2 },
+        DhParam::DH { theta: 0., d: 0.115, r: 0., alpha: -FRAC_PI_2 },
+        DhParam::DH { theta: 0., d: 0.1338, r: 0., alpha: 0. },
     ];
 }
 roplat_kinematics::dh_kinematics!(JakaA12L, 6);
